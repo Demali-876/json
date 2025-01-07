@@ -38,8 +38,8 @@ jobs:
         run: |
           COMMIT_MSG="${{ steps.commit.outputs.message }}"
           
-          if [[ $COMMIT_MSG =~ ^(feat|fix|feat!|fix!)(\([^)]+\))?:.*$ ]]; then
-            TYPE=${BASH_REMATCH[1]}
+          if echo "$COMMIT_MSG" | grep -Eq "^(feat|fix|feat!|fix!):"; then
+            TYPE=$(echo "$COMMIT_MSG" | grep -Eo "^(feat|fix|feat!|fix!)")
             DESCRIPTION=$(echo "$COMMIT_MSG" | sed 's/^[^:]*: *//' | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
             
             if [[ $TYPE == *"!"* ]]; then
