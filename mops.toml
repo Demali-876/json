@@ -1,0 +1,12 @@
+[package]
+name = "json"
+version = "1.0.0"
+description = "JSON parser and stringifier for Motoko"
+repository = ""
+keywords = [ "JSON", "parse", "stringfy" ]
+license = "MIT"
+
+[dependencies]
+regex = "1.24.1"
+vector = "0.4.1"
+test = "2.0.0"

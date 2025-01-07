@@ -1,14 +1,14 @@
 {
   "canisters": {
     "json_backend": {
-      "main": "src/json_backend/main.mo",
+      "main": "src/test/lib.test.mo",
       "type": "motoko"
     }
   },
   "defaults": {
     "build": {
       "args": "",
-      "packtool": ""
+      "packtool": "mops sources"
     }
   },
   "output_env_file": ".env",
