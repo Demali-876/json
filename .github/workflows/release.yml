@@ -1,0 +1,45 @@
+name: Release Please
+on:
+  push:
+    branches:
+      - master 
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@v3
+        id: release
+        with:
+          release-type: rust
+          package-name: "json"
+          include-v-in-tag: true
+          default-branch: master
+          changelog-types: |
+            [
+              {"type":"feat","section":"Features","hidden":false},
+              {"type":"fix","section":"Bug Fixes","hidden":false},
+              {"type":"docs","section":"Documentation","hidden":false},
+              {"type":"test","section":"Tests","hidden":true},
+              {"type":"build","section":"Build","hidden":true},
+              {"type":"ci","section":"CI/CD","hidden":true}
+            ]
+          
+      - uses: actions/checkout@v3
+        if: ${{ steps.release.outputs.release_created }}
+      
+      - name: Update mops.toml version
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          VERSION="${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}.${{ steps.release.outputs.patch }}"
+          sed -i "s/version = \".*\"/version = \"$VERSION\"/" mops.toml
+          
+      - name: Commit mops.toml changes
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add mops.toml
+          git commit -m "chore: update mops.toml version to $VERSION"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

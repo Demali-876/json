@@ -1,0 +1,64 @@
+name: Auto Branch Management
+on:
+  push:
+    branches:
+      - master 
+    paths-ignore:
+      - 'CHANGELOG.md'
+      - 'package.json'
+      - 'mops.toml'
+      - 'VERSION'
+jobs:
+  create-feature-branch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Get commit message
+        id: commit
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "message=$COMMIT_MSG" >> $GITHUB_OUTPUT
+          
+      - name: Create branch based on commit type
+        run: |
+          COMMIT_MSG="${{ steps.commit.outputs.message }}"
+          
+          if [[ $COMMIT_MSG =~ ^(feat|fix|feat!|fix!)(\([^)]+\))?:.*$ ]]; then
+            TYPE=${BASH_REMATCH[1]}
+            DESCRIPTION=$(echo "$COMMIT_MSG" | sed 's/^[^:]*: *//' | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
+            
+            if [[ $TYPE == *"!"* ]]; then
+              BRANCH_PREFIX="breaking"
+              VERSION_BUMP="major"
+            elif [[ $TYPE == "feat" ]]; then
+              BRANCH_PREFIX="feature"
+              VERSION_BUMP="minor"
+            else
+              BRANCH_PREFIX="fix"
+              VERSION_BUMP="patch"
+            fi
+            
+            BRANCH_NAME="$BRANCH_PREFIX/$DESCRIPTION"
+            
+            # Create and push branch
+            git config user.name "GitHub Action"
+            git config user.email "action@github.com"
+            git checkout -b "$BRANCH_NAME"
+            git push origin "$BRANCH_NAME"
+            
+            gh pr create \
+              --title "$COMMIT_MSG" \
+              --body "Automatic PR for $TYPE commit
+                     Version bump: $VERSION_BUMP" \
+              --base master \  # Changed from main to master
+              --head "$BRANCH_NAME" \
+              --label "$VERSION_BUMP"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
