@@ -52,13 +52,12 @@ jobs:
             git checkout -b "$BRANCH_NAME"
             git push origin "$BRANCH_NAME"
             
-            gh pr create \
-              --title "$COMMIT_MSG" \
-              --body "Automatic PR for $TYPE commit
-                     Version bump: $VERSION_BUMP" \
-              --base master \  # Changed from main to master
-              --head "$BRANCH_NAME" \
-              --label "$VERSION_BUMP"
+            gh pr create --title "$COMMIT_MSG" \
+                        --body "Automatic PR for $TYPE commit
+                               Version bump: $VERSION_BUMP" \
+                        --base master \
+                        --head "$BRANCH_NAME" \
+                        --label "$VERSION_BUMP"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
