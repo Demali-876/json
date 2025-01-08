@@ -29,14 +29,13 @@ jobs:
           && sudo apt update \
           && sudo apt install gh -y
 
-      # Add step to create labels
       - name: Create version labels
         run: |
           gh label create major --color FF0000 --description "Major version bump" || true
           gh label create minor --color FFFF00 --description "Minor version bump" || true
           gh label create patch --color 00FF00 --description "Patch version bump" || true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}
           
       - name: Get commit message
         id: commit
@@ -79,4 +78,4 @@ jobs:
                         --label "$VERSION_BUMP"
           fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}
