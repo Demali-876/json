@@ -37,15 +37,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
           
-      - name: Get commit message
+      - name: Get commit message and SHA
         id: commit
         run: |
           COMMIT_MSG=$(git log -1 --pretty=%B)
+          COMMIT_SHA=$(git rev-parse HEAD)
           echo "message=$COMMIT_MSG" >> $GITHUB_OUTPUT
+          echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
           
       - name: Create branch based on commit type
         run: |
           COMMIT_MSG="${{ steps.commit.outputs.message }}"
+          CURRENT_SHA="${{ steps.commit.outputs.sha }}"
           
           if echo "$COMMIT_MSG" | grep -Eq "^(feat|fix|feat!|fix!):"; then
             TYPE=$(echo "$COMMIT_MSG" | grep -Eo "^(feat|fix|feat!|fix!)")
@@ -64,10 +67,22 @@ jobs:
             
             BRANCH_NAME="$BRANCH_PREFIX/$DESCRIPTION"
             
+            # Check if branch exists
+            if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
+              echo "Branch $BRANCH_NAME already exists, skipping PR creation"
+              exit 0
+            fi
+            
             # Create and push branch
             git config user.name "GitHub Action"
             git config user.email "action@github.com"
             git checkout -b "$BRANCH_NAME"
+            
+            # Create a dummy change to ensure the branches differ
+            echo "# Branch created from commit $CURRENT_SHA" > .branch-info
+            git add .branch-info
+            git commit -m "chore: initialize $BRANCH_NAME branch"
+            
             git push origin "$BRANCH_NAME"
             
             gh pr create --title "$COMMIT_MSG" \

@@ -47,4 +47,4 @@ jobs:
           git commit -m "chore: update mops.toml version to $VERSION"
           git push
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}i
