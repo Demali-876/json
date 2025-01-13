@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.0](https://github.com/Demali-876/json/compare/v0.1.0...v0.2.0) (2025-01-13)
+
+
+### Features
+
+* intial library functions ([0ee5e92](https://github.com/Demali-876/json/commit/0ee5e92ab444dfe5ac4856cbe7f4c1cf6797ca49))
+* intial testing ([8e48e13](https://github.com/Demali-876/json/commit/8e48e1356b01dda7d51ec4b445222449ad7a3cbe))
+* Parser Extension ([da8255f](https://github.com/Demali-876/json/commit/da8255f283d1d6b0362a1d0d46d27d29bb4c3388))
+* Types interface ([0874038](https://github.com/Demali-876/json/commit/087403844fce5c1dbb7c86bcb70922ebb7da1d35))
+
 ## 0.1.0 (2025-01-13)
 
 
