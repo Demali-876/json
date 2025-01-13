@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/Demali-876/json/compare/v0.2.0...v0.2.1) (2025-01-13)
+
+
+### Documentation
+
+* update readme ([5f74e56](https://github.com/Demali-876/json/commit/5f74e561c8cc673cb08c0c6c5a77e6820cc8c6d2))
+
 ## [0.2.0](https://github.com/Demali-876/json/compare/v0.1.0...v0.2.0) (2025-01-13)
 
 
