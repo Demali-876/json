@@ -2,7 +2,7 @@
 name = "json"
 version = "1.0.0"
 description = "JSON parser and stringifier for Motoko"
-repository = ""
+repository = "https://github.com/Demali-876/json"
 keywords = [ "JSON", "parse", "stringfy" ]
 license = "MIT"
 
