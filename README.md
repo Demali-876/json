@@ -1,16 +1,16 @@
-# Motoko JSON Parser
+# Motoko JSON Library
 
 ![JSONXMOTOKO](motokoxjson.png)
 
-A fast, standards-compliant JSON parser and serializer for Motoko, implementing the ECMA-404 (JSON Data Interchange Syntax) standard.
+A standards-compliant JSON (ECMA-404/RFC 8259) library for the Motoko programming language, providing native JSON manipulation capabilities for Internet Computer applications.
 
-## Features
+## Overview
 
-- Full compliance with ECMA-404 / RFC 8259 JSON standard
-- Direct parsing without intermediate formats
-- High performance with optimized lexing and parsing
-- Proper Unicode support with complete escape sequence handling
-- Accurate number parsing (integers and floating-point)
+This library enables developers to:
+
+1. Parse JSON text into native Motoko data structures
+2. Manipulate JSON data directly in Motoko
+3. Serialize modified JSON back to standard JSON text
 
 ## Installation
 
@@ -18,67 +18,223 @@ A fast, standards-compliant JSON parser and serializer for Motoko, implementing 
 mops add json
 ```
 
-## Quick Start
+## Usage
 
-```motoko
+```bash
 import JSON "mo:json";
-
-// Parse JSON to Motoko
-let jsonText = "{\"name\": \"John\", \"age\": 30}";
-let parseResult = JSON.parse(jsonText);
-
-// Serialize Motoko to JSON
-let person = {
-    name = "John";
-    age = 30;
-};
-let jsonResult = JSON.stringify(person);
+import {str; int; float; bool; nullable; obj; arr } "mo:json";
 ```
 
-## Supported Types
+## Core Types
 
-The library supports all JSON data types as specified in ECMA-404:
-
-| JSON Type | Motoko Type |
-|-----------|-------------|
-| string    | Text        |
-| number    | Int/Float   |
-| object    | Record      |
-| array     | Array       |
-| boolean   | Bool        |
-| null      | Null        |
-
-## Standard Compliance
-
-This library implements the full JSON standard (ECMA-404 / RFC 8259), including:
-
-- Complete Unicode support (including surrogate pairs)
-- All escape sequences (\", \\, \/, \b, \f, \n, \r, \t, \uXXXX)
-- Full numeric precision for integers and floating-point numbers
-- Proper handling of nested structures
-- Strict syntax validation
+```motoko
+public type JSON = {
+    #Object : [(Text, JSON)];
+    #Array : [JSON];
+    #String : Text;
+    #Number : {
+        #Int : Int;
+        #Float : Float;
+    };
+    #Bool : Bool;
+    #Null;
+};
+```
 
 ## API Reference
 
-### Parsing
+### 1. Parsing JSON
+
+The `parse` function converts JSON text into Motoko's JSON type:
 
 ```motoko
-public func parse(text: Text) : Result.Result<JSON, Error>
+public func parse(input: Text) : Result.Result<JSON, Error>
 ```
 
-Parses a JSON string into a Motoko value. Returns either the parsed value or a detailed error.
-
-### Serialization
+Example usage:
 
 ```motoko
-public func stringify(value: Any) : Result.Result<Text, Error>
+let jsonText = "{ \"name\": \"John\", \"age\": 30 }";
+
+switch(JSON.parse(jsonText)) {
+    case (#ok(parsed)) {
+        // Work with parsed JSON
+    };
+    case (#err(e)) {
+        // Handle error
+    };
+};
 ```
 
-Converts a Motoko value into a JSON string representation.
+### 2. Querying JSON (get)
 
-### Error Handling
+Retrieve values from JSON using path expressions:
 
-The library provides detailed error information:
+```motoko
+public func get(json: JSON, path: Path) : ?JSON
+```
+
+Path syntax:
+
+- Use dots for object properties: "user.name"
+- Use brackets for array indices: "users[0]"
+- Use wildcards for multiple matches: "users.*.name"
+
+Example:
+
+```motoko
+let data = obj([
+    ("users", arr([
+        obj([
+            ("name", str("John")),
+            ("age", int(30))
+        ])
+    ]))
+]);
+
+// Get a specific value
+let name = JSON.get(data, "users[0].name");  // Returns ?#String("John")
+
+// Get multiple values using wildcard
+let allNames = JSON.get(data, "users.*.name");  // Returns array of all names
+```
+
+### 3. Modifying JSON (set)
+
+Add or update values in JSON using path expressions:
+
+```motoko
+public func set(json: JSON, path: Path, value: JSON) : JSON
+```
+
+Example:
+
+```motoko
+// Add a new field
+let withPhone = JSON.set(data, "users[0].phone", str("+1234567890"));
+
+// Update existing value
+let updated = JSON.set(data, "users[0].age", int(31));
+
+// Create nested structure
+let nested = JSON.set(data, "metadata.lastUpdated", str("2024-01-11"));
+```
+
+### 4. Removing Data (remove)
+
+Remove values from JSON using path expressions:
+
+```motoko
+public func remove(json: JSON, path: Path) : JSON
+```
+
+Example:
+
+```motoko
+// Remove a field
+let withoutEmail = JSON.remove(data, "users[0].email");
+
+// Remove an array element
+let withoutFirstUser = JSON.remove(data, "users[0]");
+```
+
+### 5. Serializing JSON (stringify)
+
+Convert JSON back to text with optional transformation:
+
+```motoko
+public type Replacer = {
+    #Function : (Text, JSON) -> ?JSON;
+    #Keys : [Text];
+};
+
+public func stringify(json: JSON, replacer: ?Replacer) : Text
+```
+
+Example:
+
+```motoko
+// Basic stringify
+let jsonText = JSON.stringify(data, null);
+
+// With replacer function to hide sensitive data
+let replacer = #Function(func(key: Text, value: JSON) : ?JSON {
+    if (key == "password") {
+        ?#String("****")
+    } else {
+        ?value
+    }
+});
+let safeJson = JSON.stringify(data, ?replacer);
+
+// With key filter to include specific fields
+let keys = #Keys(["name", "age"]);
+let filtered = JSON.stringify(data, ?keys);
+```
+
+## Complete Example
+
+Here's a full workflow example:
+
+```motoko
+// Start with JSON text
+let jsonText = "{
+    \"users\": [
+        {
+            \"name\": \"John\",
+            \"email\": \"john@example.com\",
+            \"age\": 30
+        }
+    ]
+}";
+
+// Parse it
+switch(JSON.parse(jsonText)) {
+    case (#ok(data)) {
+        // Get existing data
+        let name = JSON.get(data, "users[0].name");
+        
+        // Add new data
+        let updated = JSON.set(data, "users[0].phone", str("+1234567890"));
+        
+        // Remove sensitive data
+        let cleaned = JSON.remove(updated, "users[0].email");
+        
+        // Convert back to JSON text
+        let finalJson = JSON.stringify(cleaned, null);
+    };
+    case (#err(e)) {
+        Debug.print("Parse error: " # debug_show(e));
+    };
+};
+```
+
+## Standard Compliance
+
+This library strictly follows ECMA-404/RFC 8259:
+
+- Proper Unicode support
+- Complete escape sequence handling
+- Strict number format validation
+- No trailing commas
+- Only double quotes for strings
+- No comments
+
+## Limitations
+
+1. Number Precision
+   - Integers are limited to Motoko's Int bounds
+   - Floats follow IEEE 754 double-precision format
+
+2. Object Keys
+   - Must be strings
+   - No duplicate keys (last one wins)
+
+3. Special Values
+   - JavaScript `undefined` is not supported
+   - `NaN` and `Infinity` are not valid JSON values
+
+## Error Handling
 
 ```motoko
 public type Error = {
@@ -86,54 +242,62 @@ public type Error = {
     #InvalidNumber : Text;
     #InvalidKeyword : Text;
     #InvalidChar : Text;
-    #InvalidValue : Text;
     #UnexpectedEOF;
-    #UnexpectedToken :Text;
-  };
-```
-
-## Example Usage
-
-### Parsing Complex JSON
-
-```motoko
-let jsonText = """
-{
-    "name": "John Doe",
-    "age": 30,
-    "address": {
-        "street": "123 Main St",
-        "city": "Anytown"
-    },
-    "phones": [
-        "+1-555-555-1234",
-        "+1-555-555-5678"
-    ]
-}
-""";
-
-switch (JSON.parse(jsonText)) {
-    case (#ok(parsed)) {
-        // Use parsed JSON
-    };
-    case (#err(error)) {
-        // Handle error
-    };
+    #UnexpectedToken : Text;
 };
 ```
 
-### Working with Arrays
+The library provides detailed error information for debugging and validation.
+
+## Path Expressions
+
+The library uses a simple and intuitive path syntax for accessing and modifying JSON data:
 
 ```motoko
-let arrayJson = "[1, 2, 3, 4, 5]";
-switch (JSON.parse(arrayJson)) {
-    case (#ok(#Array(values))) {
-        // Process array values
-    };
-    case (_) {
-        // Handle error
-    };
-};
+// Basic property access
+"user.name"              // Access object property
+"users[0]"              // Access array element
+"users[0].name"         // Chain property and array access
+"users.*.name"          // Wildcard access to all names in users
+"items[*].price"        // Access price of all items
+```
+
+Path syntax rules:
+
+1. Use dots (.) for object property access
+2. Use brackets ([]) for array indices
+3. Use asterisk (*) as wildcard for multiple matches
+4. Paths are case-sensitive
+5. Properties can contain any valid JSON string characters
+
+## Working with Complex Data
+
+Example of working with nested structures:
+
+```motoko
+let complex = obj([
+    ("store", obj([
+        ("inventory", arr([
+            obj([
+                ("id", str("item1")),
+                ("price", float(29.99)),
+                ("tags", arr([
+                    str("electronics"),
+                    str("gadgets")
+                ]))
+            ])
+        ]))
+    ]))
+]);
+
+// Get nested value
+let price = JSON.get(complex, "store.inventory[0].price");
+
+// Update nested array
+let newTag = JSON.set(complex, "store.inventory[0].tags[2]", str("new"));
+
+// Remove all tags
+let noTags = JSON.remove(complex, "store.inventory[0].tags");
 ```
 
 ## Support & Acknowledgements
