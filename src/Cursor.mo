@@ -20,21 +20,6 @@ module {
         }
     };
 
-    public func peek(offset : Nat) : Char {
-      if (pos + offset < string.size()) {
-        string[pos + offset]
-      } else {
-        Debug.trap("Attempted to access character out of bounds at position " # Nat.toText(pos));
-      }
-    };
-    public func peekNext(): Char{
-      if (pos + 1 < string.size()) {
-        string[pos + 1]
-      }else {
-        Debug.trap("No more Tokens! Attempted to access character out of bounds at position " # Nat.toText(pos));
-      }
-    };
-
     public func hasNext() : Bool {
       pos < string.size()
     };
@@ -42,12 +27,6 @@ module {
     public func inc() {
       if (pos < string.size()) {
         pos += 1;
-      }
-    };
-
-    public func dec() {
-      if (pos > 0) {
-        pos -= 1;
       }
     };
 
