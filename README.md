@@ -136,6 +136,8 @@ let withoutEmail = JSON.remove(data, "users[0].email");
 
 // Remove an array element
 let withoutFirstUser = JSON.remove(data, "users[0]");
+
+
 ```
 
 ### 5. Serializing JSON (stringify)
@@ -209,6 +211,56 @@ switch(JSON.parse(jsonText)) {
 };
 ```
 
+## 6. Schema Validation
+
+The library supports JSON Schema validation allowing you to verify JSON data structures match an expected schema:
+
+```motoko
+public func validate(json: JSON, schema: Schema) : Result.Result<(), ValidationError>
+```
+
+Schema Type:
+
+```motoko
+public type Schema = {
+  #Object : {
+    properties : [(Text, Schema)];
+    required : ?[Text];
+  };
+  #Array : {
+    items : Schema; 
+  };
+  #String;
+  #Number;
+  #Boolean;
+  #Null;
+};
+```
+
+Example usage:
+
+```motoko
+// Define a schema
+let userSchema = schemaObject([
+  ("name", string()),
+  ("age", number()),
+  ("tags", array(string()))
+], ?["name"]); // name is required
+
+// Validate instance
+switch(JSON.validate(myJson, userSchema)) {
+  case (#ok()) {
+    // JSON is valid
+  };
+  case (#err(#TypeError{expected; got; path})) {
+    // Type mismatch error
+  };
+  case (#err(#RequiredField(field))) {
+    // Missing required field
+  };
+};
+```
+
 ## Standard Compliance
 
 This library strictly follows ECMA-404/RFC 8259:
@@ -222,6 +274,12 @@ This library strictly follows ECMA-404/RFC 8259:
 
 ## Limitations
 
+This library is in active development feedback and bug reports are welcome. Some important considerations:
+
+- The `set` method allows creating new paths by default, which might lead to unintended data structure changes. Use with caution and consider validating your JSON structure with schemas before modifications.
+
+- Schema validation is currently basic the plan is to support the full [JSON Schema specification](https://json-schema.org/) in future releases.
+
 1. Number Precision
    - Integers are limited to Motoko's Int bounds
    - Floats follow IEEE 754 double-precision format
@@ -233,6 +291,8 @@ This library strictly follows ECMA-404/RFC 8259:
 3. Special Values
    - JavaScript `undefined` is not supported
    - `NaN` and `Infinity` are not valid JSON values
+
+Please report any issues or suggestions at the GitHub repository.
 
 ## Error Handling
 
