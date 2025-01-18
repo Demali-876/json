@@ -9,6 +9,10 @@ module JSON {
     #Function : (Text, JSON) -> ?JSON;
     #Keys : [Text]
   };
+  public type Path = Types.Path;
+  public type Error = Types.Error;
+  public type Schema = Types.Schema;
+  public type ValidationError = Types.ValidationError;
   //JSON Type constructors
   public func str(text : Text) : JSON = #String(text);
   public func int(n : Int) : JSON = #Number(#Int(n));

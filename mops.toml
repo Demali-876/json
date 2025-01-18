@@ -7,6 +7,4 @@ keywords = [ "json", "parse", "stringfy", "validate" ]
 license = "MIT"
 
 [dependencies]
-regex = "1.24.1"
-vector = "0.4.1"
 test = "2.0.0"
