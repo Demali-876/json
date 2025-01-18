@@ -22,7 +22,8 @@ mops add json
 
 ```bash
 import JSON "mo:json";
-import {str; int; float; bool; nullable; obj; arr } "mo:json";
+import {str; int; float; bool; nullable; obj; arr } "mo:json"; //JSON Types
+import {string; number; boolean; nullSchema; array, schemaObject} mo:json; //JSON Schema Types
 ```
 
 ## Core Types
@@ -48,7 +49,7 @@ public type JSON = {
 The `parse` function converts JSON text into Motoko's JSON type:
 
 ```motoko
-public func parse(input: Text) : Result.Result<JSON, Error>
+public func parse(input: Text) : Result.Result<JSON.JSON, JSON.Error>
 ```
 
 Example usage:
@@ -71,7 +72,7 @@ switch(JSON.parse(jsonText)) {
 Retrieve values from JSON using path expressions:
 
 ```motoko
-public func get(json: JSON, path: Path) : ?JSON
+public func get(json: JSON.JSON, JSON.path: Path) : ?JSON.JSON
 ```
 
 Path syntax:
@@ -104,7 +105,7 @@ let allNames = JSON.get(data, "users.*.name");  // Returns array of all names
 Add or update values in JSON using path expressions:
 
 ```motoko
-public func set(json: JSON, path: Path, value: JSON) : JSON
+public func set(json: JSON.JSON, path: JSON.Path, value: JSON.JSON) : JSON.JSON
 ```
 
 Example:
@@ -125,7 +126,7 @@ let nested = JSON.set(data, "metadata.lastUpdated", str("2024-01-11"));
 Remove values from JSON using path expressions:
 
 ```motoko
-public func remove(json: JSON, path: Path) : JSON
+public func remove(json: JSON.JSON, path: JSON.Path) : JSON.JSON
 ```
 
 Example:
@@ -150,7 +151,7 @@ public type Replacer = {
     #Keys : [Text];
 };
 
-public func stringify(json: JSON, replacer: ?Replacer) : Text
+public func stringify(json: JSON.JSON, replacer: ?JSON.Replacer) : Text
 ```
 
 Example:
@@ -216,7 +217,7 @@ switch(JSON.parse(jsonText)) {
 The library supports JSON Schema validation allowing you to verify JSON data structures match an expected schema:
 
 ```motoko
-public func validate(json: JSON, schema: Schema) : Result.Result<(), ValidationError>
+public func validate(json: JSON.JSON, schema: JSON.Schema) : Result.Result<(), JSON.ValidationError>
 ```
 
 Schema Type:
