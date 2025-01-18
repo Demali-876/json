@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.2](https://github.com/Demali-876/json/compare/v0.2.1...v0.2.2) (2025-01-18)
+
+
+### Bug Fixes
+
+* expose Schema, Error, Path and ValidationError Types ([e6dd3ee](https://github.com/Demali-876/json/commit/e6dd3eef135219ebb60ee51b2c22324572e5bbfd))
+
+
+### Documentation
+
+* readme changes ([bb3db3b](https://github.com/Demali-876/json/commit/bb3db3b0bf658c01c5b3883e9bfcce650d129f4a))
+
 ## [0.2.1](https://github.com/Demali-876/json/compare/v0.2.0...v0.2.1) (2025-01-13)
 
 
