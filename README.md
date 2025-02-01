@@ -23,7 +23,7 @@ mops add json
 ```bash
 import JSON "mo:json";
 import {str; int; float; bool; nullable; obj; arr } "mo:json"; //JSON Types
-import {string; number; boolean; nullSchema; array, schemaObject} mo:json; //JSON Schema Types
+import {string; number; boolean; nullSchema; array, schemaObject} "mo:json"; //JSON Schema Types
 ```
 
 ## Core Types
