@@ -4,6 +4,28 @@ import Result "mo:base/Result";
 import { test } "mo:test";
 import Types "../src/Types";
 
+func testCases<TCase, TExpected>(
+    name : Text,
+    f : (TCase) -> TExpected,
+    equal : (TExpected, TExpected) -> Bool,
+    toTextCase : (TCase) -> Text,
+    toTextExpected : (TExpected) -> Text,
+    cases : [(TCase, TExpected)],
+) {
+    for ((c, expected) in cases.vals()) {
+        let fullName = name # " - " # toTextCase(c);
+        test(
+            fullName,
+            func() {
+                let result = f(c);
+                if (not equal(result, expected)) {
+                    Debug.trap(fullName # " failed\nInput: " # toTextCase(c) # "\nExpected: " # toTextExpected(expected) # "\nActual: " # toTextExpected(result));
+                };
+            },
+        );
+    };
+};
+
 let fields = [
     ("string", #string("test")),
     ("positive-integer", #number(#int(42))),
@@ -178,28 +200,31 @@ test(
     },
 );
 
-test(
+testCases<Text, Result.Result<Json.Json, Types.Error>>(
     "parse",
-    func() {
-        let cases : [(Text, Result.Result<Json.Json, Types.Error>)] = [
-            ("{", #err(#unexpectedEOF)),
-            ("{}", #ok(#object_([]))),
-            ("true", #err(#invalidKeyword("Invalid keyword starting with 't'"))),
-            ("\"hello\"", #ok(#string("hello"))),
-            ("123", #ok(#number(#int(123)))),
-            ("123.456", #ok(#number(#float(123.456)))),
-            ("-123.456e-10", #ok(#number(#float(-1.234_56e-08)))),
-            ("{\"name\":\"John\",\"age\":30}", #ok(#object_([("name", #string("John")), ("age", #number(#int(+30)))]))),
-            ("\"hello\\u0048\\u0065\\u006C\\u006C\\u006F\"", #err(#invalidString("Invalid Unicode escape sequence: Invalid hex value"))),
-            ("[1,2,3,null,false,true]", #err(#invalidKeyword("Invalid keyword starting with 'n'"))), // Array with mixed types
-            ("{\"nested\":{\"array\":[1,2,3],\"null\": null}}", #err(#invalidKeyword("Invalid keyword starting with 'n'"))),
-            ("{ \"users\": [ { \"id\": 1, \"name\": \"Alice\", \"email\": \"alice@example.com\", \"orders\": [ { \"orderId\": \"A123\", \"items\": [ {\"product\": \"Laptop\", \"price\": 999.99}, {\"product\": \"Mouse\", \"price\": 24.99} ] } ] }, { \"id\": 2, \"name\": \"Bob\", \"email\": \"bob@example.com\", \"orders\": [] } ], \"metadata\": { \"lastUpdated\": \"2024-01-10\" } }", #ok(#object_([("users", #array([#object_([("id", #number(#int(1))), ("name", #string("Alice")), ("email", #string("alice@example.com")), ("orders", #array([#object_([("orderId", #string("A123")), ("items", #array([#object_([("product", #string("Laptop")), ("price", #number(#float(999.99)))]), #object_([("product", #string("Mouse")), ("price", #number(#float(24.99)))])]))])]))]), #object_([("id", #number(#int(2))), ("name", #string("Bob")), ("email", #string("bob@example.com")), ("orders", #array([]))])])), ("metadata", #object_([("lastUpdated", #string("2024-01-10"))]))]))),
-        ];
-        for ((jsonString, expectedResult) in cases.vals()) {
-            let result = Json.parse(jsonString);
-            if (result != expectedResult) {
-                Debug.trap("Parse failed\nJson: " # jsonString # "\nResult: " # debug_show (result) # "\nExpected: " # debug_show (expectedResult));
-            };
-        };
-    },
+    Json.parse,
+    func(x : Result.Result<Json.Json, Types.Error>, y : Result.Result<Json.Json, Types.Error>) : Bool = x == y,
+    func(x : Text) : Text = x,
+    func(x : Result.Result<Json.Json, Types.Error>) : Text = debug_show (x),
+    [
+        ("{", #err(#unexpectedEOF)),
+        ("{}", #ok(#object_([]))),
+        ("true", #ok(#bool(true))),
+        ("false", #ok(#bool(false))),
+        ("null", #ok(#null_)),
+        ("[1,2,3]", #ok(#array([#number(#int(1)), #number(#int(2)), #number(#int(3))]))),
+        ("\"\"", #ok(#string(""))),
+        ("\"hello\"", #ok(#string("hello"))),
+        ("123", #ok(#number(#int(123)))),
+        ("123.456", #ok(#number(#float(123.456)))),
+        ("-123.456e-10", #ok(#number(#float(-1.234_56e-08)))),
+        ("{\"name\":\"John\",\"age\":30}", #ok(#object_([("name", #string("John")), ("age", #number(#int(+30)))]))),
+        (
+            "\"hello\\u0048\\u0065\\u006C\\u006C\\u006F\"",
+            #ok(#string("helloHello")),
+        ),
+        ("[1,2,3,null,false,true]", #err(#invalidKeyword("Invalid keyword starting with 'n'"))), // Array with mixed types
+        ("{\"nested\":{\"array\":[1,2,3],\"null\": null}}", #ok(#object_([("nested", #object_([("array", #array([#number(#int(1)), #number(#int(2)), #number(#int(3))])), ("null", #null_)]))]))),
+        ("{ \"users\": [ { \"id\": 1, \"name\": \"Alice\", \"email\": \"alice@example.com\", \"orders\": [ { \"orderId\": \"A123\", \"items\": [ {\"product\": \"Laptop\", \"price\": 999.99}, {\"product\": \"Mouse\", \"price\": 24.99} ] } ] }, { \"id\": 2, \"name\": \"Bob\", \"email\": \"bob@example.com\", \"orders\": [] } ], \"metadata\": { \"lastUpdated\": \"2024-01-10\" } }", #ok(#object_([("users", #array([#object_([("id", #number(#int(1))), ("name", #string("Alice")), ("email", #string("alice@example.com")), ("orders", #array([#object_([("orderId", #string("A123")), ("items", #array([#object_([("product", #string("Laptop")), ("price", #number(#float(999.99)))]), #object_([("product", #string("Mouse")), ("price", #number(#float(24.99)))])]))])]))]), #object_([("id", #number(#int(2))), ("name", #string("Bob")), ("email", #string("bob@example.com")), ("orders", #array([]))])])), ("metadata", #object_([("lastUpdated", #string("2024-01-10"))]))]))),
+    ],
 );
