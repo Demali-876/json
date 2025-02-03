@@ -1,6 +1,8 @@
 import Json "../src/lib";
 import Debug "mo:base/Debug";
+import Result "mo:base/Result";
 import { test } "mo:test";
+import Types "../src/Types";
 
 let fields = [
     ("string", #string("test")),
@@ -179,36 +181,25 @@ test(
 test(
     "parse",
     func() {
-        let jsonText =;
-
-        switch (Json.parse(jsonText)) {
-            case (#err(e)) Debug.trap("Parse error: " # debug_show (e));
-            case (#ok(data)) {
-                assert (data ==);
-
-            };
-        };
-    },
-);
-
-test(
-    "parse failures",
-    func() {
-        let cases : (Text, Result.Result<Json.Json, Types.Error>) = [
-            ("{", #err(#invalidJson)),
-            ("true", #err(#invalidJson)),
-            ("\"hello\"", #err(#invalidJson)),
-            ("123", #err(#invalidJson)),
-            ("123.456", #err(#invalidJson)),
-            ("-123.456e-10", #err(#invalidJson)),
-            ("{\"name\":\"John\",\"age\":30}", #err(#invalidJson)),
-            ("\"hello\\u0048\\u0065\\u006C\\u006C\\u006F\"", #err(#invalidJson)),
-            ("[1,2,3,null,false,true]", #err(#invalidJson)), // Array with mixed types
-            ("{\"nested\":{\"array\":[1,2,3],\"null\":null}}", #err(#invalidJson)),
+        let cases : [(Text, Result.Result<Json.Json, Types.Error>)] = [
+            ("{", #err(#unexpectedEOF)),
+            ("{}", #ok(#object_([]))),
+            ("true", #err(#invalidKeyword("Invalid keyword starting with 't'"))),
+            ("\"hello\"", #ok(#string("hello"))),
+            ("123", #ok(#number(#int(123)))),
+            ("123.456", #ok(#number(#float(123.456)))),
+            ("-123.456e-10", #ok(#number(#float(-1.234_56e-08)))),
+            ("{\"name\":\"John\",\"age\":30}", #ok(#object_([("name", #string("John")), ("age", #number(#int(+30)))]))),
+            ("\"hello\\u0048\\u0065\\u006C\\u006C\\u006F\"", #err(#invalidString("Invalid Unicode escape sequence: Invalid hex value"))),
+            ("[1,2,3,null,false,true]", #err(#invalidKeyword("Invalid keyword starting with 'n'"))), // Array with mixed types
+            ("{\"nested\":{\"array\":[1,2,3],\"null\": null}}", #err(#invalidKeyword("Invalid keyword starting with 'n'"))),
             ("{ \"users\": [ { \"id\": 1, \"name\": \"Alice\", \"email\": \"alice@example.com\", \"orders\": [ { \"orderId\": \"A123\", \"items\": [ {\"product\": \"Laptop\", \"price\": 999.99}, {\"product\": \"Mouse\", \"price\": 24.99} ] } ] }, { \"id\": 2, \"name\": \"Bob\", \"email\": \"bob@example.com\", \"orders\": [] } ], \"metadata\": { \"lastUpdated\": \"2024-01-10\" } }", #ok(#object_([("users", #array([#object_([("id", #number(#int(1))), ("name", #string("Alice")), ("email", #string("alice@example.com")), ("orders", #array([#object_([("orderId", #string("A123")), ("items", #array([#object_([("product", #string("Laptop")), ("price", #number(#float(999.99)))]), #object_([("product", #string("Mouse")), ("price", #number(#float(24.99)))])]))])]))]), #object_([("id", #number(#int(2))), ("name", #string("Bob")), ("email", #string("bob@example.com")), ("orders", #array([]))])])), ("metadata", #object_([("lastUpdated", #string("2024-01-10"))]))]))),
         ];
-        for ((jsonString, expectedResult) in cases) {
-            assert (Json.parse(jsonString) == expectedResult);
+        for ((jsonString, expectedResult) in cases.vals()) {
+            let result = Json.parse(jsonString);
+            if (result != expectedResult) {
+                Debug.trap("Parse failed\nJson: " # jsonString # "\nResult: " # debug_show (result) # "\nExpected: " # debug_show (expectedResult));
+            };
         };
     },
 );
