@@ -21,7 +21,7 @@ mops add json
 ## Usage
 
 ```bash
-import JSON "mo:json";
+import Json "mo:json";
 import {str; int; float; bool; nullable; obj; arr } "mo:json"; //JSON Types
 import {string; number; boolean; nullSchema; array, schemaObject} "mo:json"; //JSON Schema Types
 ```
@@ -29,16 +29,16 @@ import {string; number; boolean; nullSchema; array, schemaObject} "mo:json"; //J
 ## Core Types
 
 ```motoko
-public type JSON = {
-    #Object : [(Text, JSON)];
-    #Array : [JSON];
-    #String : Text;
-    #Number : {
-        #Int : Int;
-        #Float : Float;
+public type Json = {
+    #object_ : [(Text, Json)];
+    #array : [Json];
+    #string : Text;
+    #number : {
+        #int : Int;
+        #float : Float;
     };
-    #Bool : Bool;
-    #Null;
+    #bool : Bool;
+    #null_;
 };
 ```
 
@@ -49,7 +49,7 @@ public type JSON = {
 The `parse` function converts JSON text into Motoko's JSON type:
 
 ```motoko
-public func parse(input: Text) : Result.Result<JSON.JSON, JSON.Error>
+public func parse(input: Text) : Result.Result<Json.Json, Json.Error>
 ```
 
 Example usage:
@@ -57,7 +57,7 @@ Example usage:
 ```motoko
 let jsonText = "{ \"name\": \"John\", \"age\": 30 }";
 
-switch(JSON.parse(jsonText)) {
+switch(Json.parse(jsonText)) {
     case (#ok(parsed)) {
         // Work with parsed JSON
     };
@@ -72,7 +72,7 @@ switch(JSON.parse(jsonText)) {
 Retrieve values from JSON using path expressions:
 
 ```motoko
-public func get(json: JSON.JSON, JSON.path: Path) : ?JSON.JSON
+public func get(json: Json.Json, Json.path: Path) : ?Json.Json
 ```
 
 Path syntax:
@@ -94,12 +94,12 @@ let data = obj([
 ]);
 
 // Get a specific value
-let name = JSON.get(data, "users[0].name");  // Returns ?#String("John")
+let name = Json.get(data, "users[0].name");  // Returns ?#string("John")
 // Or get text value
-let nameText = JSON.getAsText(data, "users[0].name"); // Returns Result.Result<Text, JSON.GetAsError>
+let nameText = Json.getAsText(data, "users[0].name"); // Returns Result.Result<Text, Json.GetAsError>
 
 // Get multiple values using wildcard
-let allNames = JSON.get(data, "users.*.name");  // Returns array of all names
+let allNames = Json.get(data, "users.*.name");  // Returns array of all names
 ```
 
 ### 3. Modifying JSON (set)
@@ -107,20 +107,20 @@ let allNames = JSON.get(data, "users.*.name");  // Returns array of all names
 Add or update values in JSON using path expressions:
 
 ```motoko
-public func set(json: JSON.JSON, path: JSON.Path, value: JSON.JSON) : JSON.JSON
+public func set(json: Json.Json, path: Json.Path, value: Json.Json) : Json.Json
 ```
 
 Example:
 
 ```motoko
 // Add a new field
-let withPhone = JSON.set(data, "users[0].phone", str("+1234567890"));
+let withPhone = Json.set(data, "users[0].phone", str("+1234567890"));
 
 // Update existing value
-let updated = JSON.set(data, "users[0].age", int(31));
+let updated = Json.set(data, "users[0].age", int(31));
 
 // Create nested structure
-let nested = JSON.set(data, "metadata.lastUpdated", str("2024-01-11"));
+let nested = Json.set(data, "metadata.lastUpdated", str("2024-01-11"));
 ```
 
 ### 4. Removing Data (remove)
@@ -128,53 +128,53 @@ let nested = JSON.set(data, "metadata.lastUpdated", str("2024-01-11"));
 Remove values from JSON using path expressions:
 
 ```motoko
-public func remove(json: JSON.JSON, path: JSON.Path) : JSON.JSON
+public func remove(json: Json.Json, path: Json.Path) : Json.Json
 ```
 
 Example:
 
 ```motoko
 // Remove a field
-let withoutEmail = JSON.remove(data, "users[0].email");
+let withoutEmail = Json.remove(data, "users[0].email");
 
 // Remove an array element
-let withoutFirstUser = JSON.remove(data, "users[0]");
+let withoutFirstUser = Json.remove(data, "users[0]");
 
 
 ```
 
-### 5. Serializing JSON (stringify)
+### 5. Serializing Json (stringify)
 
-Convert JSON back to text with optional transformation:
+Convert Json back to text with optional transformation:
 
 ```motoko
 public type Replacer = {
-    #Function : (Text, JSON) -> ?JSON;
-    #Keys : [Text];
+    #function : (Text, Json.Json) -> ?Json.Json;
+    #keys : [Text];
 };
 
-public func stringify(json: JSON.JSON, replacer: ?JSON.Replacer) : Text
+public func stringify(json: Json.Json, replacer: ?Json.Replacer) : Text
 ```
 
 Example:
 
 ```motoko
 // Basic stringify
-let jsonText = JSON.stringify(data, null);
+let jsonText = Json.stringify(data, null);
 
 // With replacer function to hide sensitive data
-let replacer = #Function(func(key: Text, value: JSON) : ?JSON {
+let replacer = #function(func(key: Text, value: Json.Json) : ?Json.Json {
     if (key == "password") {
-        ?#String("****")
+        ?#string("****")
     } else {
         ?value
     }
 });
-let safeJson = JSON.stringify(data, ?replacer);
+let safeJson = Json.stringify(data, ?replacer);
 
 // With key filter to include specific fields
-let keys = #Keys(["name", "age"]);
-let filtered = JSON.stringify(data, ?keys);
+let keys = #keys(["name", "age"]);
+let filtered = Json.stringify(data, ?keys);
 ```
 
 ## Complete Example
@@ -194,19 +194,19 @@ let jsonText = "{
 }";
 
 // Parse it
-switch(JSON.parse(jsonText)) {
+switch(Json.parse(jsonText)) {
     case (#ok(data)) {
         // Get existing data
-        let name = JSON.get(data, "users[0].name");
+        let name = Json.get(data, "users[0].name");
 
         // Add new data
-        let updated = JSON.set(data, "users[0].phone", str("+1234567890"));
+        let updated = Json.set(data, "users[0].phone", str("+1234567890"));
 
         // Remove sensitive data
-        let cleaned = JSON.remove(updated, "users[0].email");
+        let cleaned = Json.remove(updated, "users[0].email");
 
         // Convert back to JSON text
-        let finalJson = JSON.stringify(cleaned, null);
+        let finalJson = Json.stringify(cleaned, null);
     };
     case (#err(e)) {
         Debug.print("Parse error: " # debug_show(e));
@@ -219,24 +219,24 @@ switch(JSON.parse(jsonText)) {
 The library supports JSON Schema validation allowing you to verify JSON data structures match an expected schema:
 
 ```motoko
-public func validate(json: JSON.JSON, schema: JSON.Schema) : Result.Result<(), JSON.ValidationError>
+public func validate(json: Json.Json, schema: Json.Schema) : Result.Result<(), Json.ValidationError>
 ```
 
 Schema Type:
 
 ```motoko
 public type Schema = {
-  #Object : {
+  #object_ : {
     properties : [(Text, Schema)];
     required : ?[Text];
   };
-  #Array : {
+  #array : {
     items : Schema;
   };
-  #String;
-  #Number;
-  #Boolean;
-  #Null;
+  #string;
+  #number;
+  #boolean;
+  #null;
 };
 ```
 
@@ -251,7 +251,7 @@ let userSchema = schemaObject([
 ], ?["name"]); // name is required
 
 // Validate instance
-switch(JSON.validate(myJson, userSchema)) {
+switch(Json.validate(myJson, userSchema)) {
   case (#ok()) {
     // JSON is valid
   };
@@ -303,12 +303,12 @@ Please report any issues or suggestions at the GitHub repository.
 
 ```motoko
 public type Error = {
-    #InvalidString : Text;
-    #InvalidNumber : Text;
-    #InvalidKeyword : Text;
-    #InvalidChar : Text;
-    #UnexpectedEOF;
-    #UnexpectedToken : Text;
+    #invalidString : Text;
+    #invalidNumber : Text;
+    #invalidKeyword : Text;
+    #invalidChar : Text;
+    #unexpectedEOF;
+    #unexpectedToken : Text;
 };
 ```
 
@@ -356,13 +356,13 @@ let complex = obj([
 ]);
 
 // Get nested value
-let price = JSON.get(complex, "store.inventory[0].price");
+let price = Json.get(complex, "store.inventory[0].price");
 
 // Update nested array
-let newTag = JSON.set(complex, "store.inventory[0].tags[2]", str("new"));
+let newTag = Json.set(complex, "store.inventory[0].tags[2]", str("new"));
 
 // Remove all tags
-let noTags = JSON.remove(complex, "store.inventory[0].tags");
+let noTags = Json.remove(complex, "store.inventory[0].tags");
 ```
 
 ## Support & Acknowledgements
