@@ -6,155 +6,155 @@ import Text "mo:base/Text";
 import Nat "mo:base/Nat";
 
 module {
-  type JSON = Types.JSON;
+  type Json = Types.Json;
   public class Parser(tokens : [Types.Token]) {
     var position = 0;
 
     private func current() : ?Types.Token {
-      if (position < tokens.size()) ?tokens[position] else null
-    };
-    
-    private func advance() {
-      position += 1
+      if (position < tokens.size()) ?tokens[position] else null;
     };
 
-    public func parse() : Result.Result<Types.JSON, Types.Error> {
+    private func advance() {
+      position += 1;
+    };
+
+    public func parse() : Result.Result<Types.Json, Types.Error> {
       switch (parseValue()) {
         case (#ok(json)) {
           switch (current()) {
-            case (null) {#ok(json)};
-            case (?_) {#err(#UnexpectedToken("Expected end of input"))}
-          }
+            case (null) { #ok(json) };
+            case (?_) { #err(#unexpectedToken("Expected end of input")) };
+          };
         };
-        case (#err(e)) {#err(e)}
-      }
+        case (#err(e)) { #err(e) };
+      };
     };
 
-    private func parseValue() : Result.Result<Types.JSON, Types.Error> {
+    private func parseValue() : Result.Result<Types.Json, Types.Error> {
       switch (current()) {
-        case (null) {#err(#UnexpectedEOF)};
+        case (null) { #err(#unexpectedEOF) };
         case (?token) {
           switch (token) {
-            case (#BeginObject) {parseObject()};
-            case (#BeginArray) {parseArray()};
-            case (#String(s)) {advance(); #ok(#String(s))};
-            case (#Number(n)) {advance(); #ok(#Number(n))};
-            case (#True) {advance(); #ok(#Bool(true))};
-            case (#False) {advance(); #ok(#Bool(false))};
-            case (#Null) {advance(); #ok(#Null)};
-            case (_) {#err(#UnexpectedToken("Expected value"))}
-          }
-        }
-      }
+            case (#beginObject) { parseObject() };
+            case (#beginArray) { parseArray() };
+            case (#string(s)) { advance(); #ok(#string(s)) };
+            case (#number(n)) { advance(); #ok(#number(n)) };
+            case (#true_) { advance(); #ok(#bool(true)) };
+            case (#false_) { advance(); #ok(#bool(false)) };
+            case (#null_) { advance(); #ok(#null_) };
+            case (_) { #err(#unexpectedToken("Expected value")) };
+          };
+        };
+      };
     };
 
-    private func parseObject() : Result.Result<Types.JSON, Types.Error> {
+    private func parseObject() : Result.Result<Types.Json, Types.Error> {
       advance();
-      var fields : [(Text, Types.JSON)] = [];
+      var fields : [(Text, Types.Json)] = [];
 
       switch (current()) {
-        case (? #EndObject) {
+        case (?#endObject) {
           advance();
-          #ok(#Object(fields))
+          #ok(#object_(fields));
         };
-        case (? #String(_)) {
+        case (?#string(_)) {
           switch (parseMember()) {
-            case (#err(e)) {#err(e)};
+            case (#err(e)) { #err(e) };
             case (#ok(field)) {
               fields := [(field.0, field.1)];
               loop {
                 switch (current()) {
-                  case (? #ValueSeparator) {
+                  case (?#valueSeperator) {
                     advance();
                     switch (parseMember()) {
                       case (#ok(next)) {
-                        fields := Array.append(fields, [(next.0, next.1)])
+                        fields := Array.append(fields, [(next.0, next.1)]);
                       };
-                      case (#err(e)) {return #err(e)}
-                    }
+                      case (#err(e)) { return #err(e) };
+                    };
                   };
-                  case (? #EndObject) {
+                  case (?#endObject) {
                     advance();
-                    return #ok(#Object(fields))
+                    return #ok(#object_(fields));
                   };
-                  case (null) {return #err(#UnexpectedEOF)};
+                  case (null) { return #err(#unexpectedEOF) };
                   case (_) {
-                    return #err(#UnexpectedToken("Expected ',' or '}'"))
-                  }
-                }
-              }
-            }
-          }
+                    return #err(#unexpectedToken("Expected ',' or '}'"));
+                  };
+                };
+              };
+            };
+          };
         };
-        case (null) {#err(#UnexpectedEOF)};
-        case (_) {#err(#UnexpectedToken("Expected string or '}'"))}
-      }
+        case (null) { #err(#unexpectedEOF) };
+        case (_) { #err(#unexpectedToken("Expected string or '}'")) };
+      };
     };
 
-    private func parseMember() : Result.Result<(Text, Types.JSON), Types.Error> {
+    private func parseMember() : Result.Result<(Text, Types.Json), Types.Error> {
       switch (current()) {
-        case (? #String(key)) {
+        case (?#string(key)) {
           advance();
           switch (current()) {
-            case (? #NameSeparator) {
+            case (?#nameSeperator) {
               advance();
               switch (parseValue()) {
-                case (#ok(value)) {#ok((key, value))};
-                case (#err(e)) {#err(e)}
-              }
+                case (#ok(value)) { #ok((key, value)) };
+                case (#err(e)) { #err(e) };
+              };
             };
-            case (null) {#err(#UnexpectedEOF)};
-            case (_) {#err(#UnexpectedToken("Expected ':'"))}
-          }
+            case (null) { #err(#unexpectedEOF) };
+            case (_) { #err(#unexpectedToken("Expected ':'")) };
+          };
         };
-        case (null) {#err(#UnexpectedEOF)};
-        case (_) {#err(#UnexpectedToken("Expected string"))}
-      }
+        case (null) { #err(#unexpectedEOF) };
+        case (_) { #err(#unexpectedToken("Expected string")) };
+      };
     };
 
-    private func parseArray() : Result.Result<Types.JSON, Types.Error> {
+    private func parseArray() : Result.Result<Types.Json, Types.Error> {
       advance();
-      var elements : [Types.JSON] = [];
+      var elements : [Types.Json] = [];
 
       switch (current()) {
-        case (? #EndArray) {
+        case (?#endArray) {
           advance();
-          #ok(#Array(elements))
+          #ok(#array(elements));
         };
         case (null) {
-          #err(#UnexpectedEOF)
+          #err(#unexpectedEOF);
         };
         case (_) {
           switch (parseValue()) {
-            case (#err(e)) {#err(e)};
+            case (#err(e)) { #err(e) };
             case (#ok(value)) {
               elements := [value];
               loop {
                 switch (current()) {
-                  case (? #ValueSeparator) {
+                  case (?#valueSeperator) {
                     advance();
                     switch (parseValue()) {
                       case (#ok(next)) {
-                        elements := Array.append(elements, [next])
+                        elements := Array.append(elements, [next]);
                       };
-                      case (#err(e)) {return #err(e)}
-                    }
+                      case (#err(e)) { return #err(e) };
+                    };
                   };
-                  case (? #EndArray) {
+                  case (?#endArray) {
                     advance();
-                    return #ok(#Array(elements))
+                    return #ok(#array(elements));
                   };
-                  case (null) {return #err(#UnexpectedEOF)};
+                  case (null) { return #err(#unexpectedEOF) };
                   case (_) {
-                    return #err(#UnexpectedToken("Expected ',' or ']'"))
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+                    return #err(#unexpectedToken("Expected ',' or ']'"));
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
   };
 
   public func parsePath(path : Text) : [Types.PathPart] {
@@ -167,392 +167,406 @@ module {
       switch (c) {
         case '[' {
           if (current.size() > 0) {
-            parts.add(#Key(Text.fromIter(current.vals())));
-            current.clear()
+            parts.add(#key(Text.fromIter(current.vals())));
+            current.clear();
           };
-          inBracket := true
+          inBracket := true;
         };
         case ']' {
           if (current.size() > 0) {
             let indexText = Text.fromIter(current.vals());
             if (indexText == "*") {
-              parts.add(#Wildcard)
+              parts.add(#wildcard);
             } else {
               switch (Nat.fromText(indexText)) {
-                case (?idx) {parts.add(#Index(idx))};
-                case null {}
-              }
+                case (?idx) { parts.add(#index(idx)) };
+                case null {};
+              };
             };
-            current.clear()
+            current.clear();
           };
-          inBracket := false
+          inBracket := false;
         };
         case '.' {
           if (current.size() > 0) {
             let key = Text.fromIter(current.vals());
             if (key == "*") {
-              parts.add(#Wildcard)
+              parts.add(#wildcard);
             } else {
-              parts.add(#Key(key))
+              parts.add(#key(key));
             };
-            current.clear()
-          }
+            current.clear();
+          };
         };
-        case c {current.add(c)}
-      }
+        case c { current.add(c) };
+      };
     };
     if (current.size() > 0) {
       let final = Text.fromIter(current.vals());
       if (final == "*") {
-        parts.add(#Wildcard)
+        parts.add(#wildcard);
       } else {
-        parts.add(#Key(final))
-      }
+        parts.add(#key(final));
+      };
     };
 
-    Buffer.toArray(parts)
+    Buffer.toArray(parts);
   };
 
-  public func getWithParts(json : JSON, parts : [Types.PathPart]) : ?JSON {
-    if (parts.size() == 0) {return ?json};
+  public func getWithParts(json : Json, parts : [Types.PathPart]) : ?Json {
+    if (parts.size() == 0) { return ?json };
 
     switch (parts[0], json) {
-      case (#Key(key), #Object(entries)) {
+      case (#key(key), #object_(entries)) {
         for ((k, v) in entries.vals()) {
           if (k == key) {
             return getWithParts(
               v,
               Array.tabulate<Types.PathPart>(
                 parts.size() - 1,
-                func(i) = parts[i + 1]
-              )
-            )
-          }
+                func(i) = parts[i + 1],
+              ),
+            );
+          };
         };
-        null
+        null;
       };
-      case (#Index(i), #Array(items)) {
+      case (#index(i), #array(items)) {
         if (i < items.size()) {
           getWithParts(
             items[i],
             Array.tabulate<Types.PathPart>(
               parts.size() - 1,
-              func(i) = parts[i + 1]
-            )
-          )
+              func(i) = parts[i + 1],
+            ),
+          );
         } else {
-          null
-        }
+          null;
+        };
       };
-      case (#Wildcard, #Object(entries)) {
-        ? #Array(
-          Array.mapFilter<(Text, JSON), JSON>(
+      case (#wildcard, #object_(entries)) {
+        ?#array(
+          Array.mapFilter<(Text, Json), Json>(
             entries,
             func((_, v)) = getWithParts(
               v,
               Array.tabulate<Types.PathPart>(
                 parts.size() - 1,
-                func(i) = parts[i + 1]
-              )
-            )
+                func(i) = parts[i + 1],
+              ),
+            ),
           )
-        )
+        );
       };
-      case (#Wildcard, #Array(items)) {
-        ? #Array(
-          Array.mapFilter<JSON, JSON>(
+      case (#wildcard, #array(items)) {
+        ?#array(
+          Array.mapFilter<Json, Json>(
             items,
             func(item) = getWithParts(
               item,
               Array.tabulate<Types.PathPart>(
                 parts.size() - 1,
-                func(i) = parts[i + 1]
-              )
-            )
+                func(i) = parts[i + 1],
+              ),
+            ),
           )
-        )
+        );
       };
-      case _ {null}
-    }
+      case _ { null };
+    };
   };
 
-  public func setWithParts(json : JSON, parts : [Types.PathPart], newValue : JSON) : JSON {
+  public func setWithParts(json : Json, parts : [Types.PathPart], newValue : Json) : Json {
     if (parts.size() == 0) {
-      return newValue
+      return newValue;
     };
 
     switch (parts[0], json) {
-      case (#Key(key), #Object(entries)) {
+      case (#key(key), #object_(entries)) {
         let remaining = Array.tabulate<Types.PathPart>(
           parts.size() - 1,
-          func(i) = parts[i + 1]
+          func(i) = parts[i + 1],
         );
 
         var found = false;
-        let newEntries = Array.map<(Text, JSON), (Text, JSON)>(
+        let newEntries = Array.map<(Text, Json), (Text, Json)>(
           entries,
-          func((k, v) : (Text, JSON)) : (Text, JSON) {
+          func((k, v) : (Text, Json)) : (Text, Json) {
             if (k == key) {
               found := true;
-              (k, setWithParts(v, remaining, newValue))
-            } else {(k, v)}
-          }
+              (k, setWithParts(v, remaining, newValue));
+            } else { (k, v) };
+          },
         );
 
         if (not found) {
-          #Object(Array.append(newEntries, [(key, setWithParts(#Null, remaining, newValue))]))
+          #object_(Array.append(newEntries, [(key, setWithParts(#null_, remaining, newValue))]));
         } else {
-          #Object(newEntries)
-        }
+          #object_(newEntries);
+        };
       };
 
-      case (#Index(i), #Array(items)) {
+      case (#index(i), #array(items)) {
         let remaining = Array.tabulate<Types.PathPart>(
           parts.size() - 1,
-          func(i) = parts[i + 1]
+          func(i) = parts[i + 1],
         );
 
         if (i < items.size()) {
-          #Array(
-            Array.tabulate<JSON>(
+          #array(
+            Array.tabulate<Json>(
               items.size(),
-              func(idx : Nat) : JSON {
+              func(idx : Nat) : Json {
                 if (idx == i) {
-                  setWithParts(items[idx], remaining, newValue)
+                  setWithParts(items[idx], remaining, newValue);
                 } else {
-                  items[idx]
-                }
-              }
+                  items[idx];
+                };
+              },
             )
-          )
-        } else {
-          let nulls = Array.tabulate<JSON>(
-            i - items.size(),
-            func(_) = #Null
           );
-          #Array(
+        } else {
+          let nulls = Array.tabulate<Json>(
+            i - items.size(),
+            func(_) = #null_,
+          );
+          #array(
             Array.append(
               Array.append(items, nulls),
-              [setWithParts(#Null, remaining, newValue)]
+              [setWithParts(#null_, remaining, newValue)],
             )
-          )
-        }
+          );
+        };
       };
 
-      case (#Key(key), _) {
+      case (#key(key), _) {
         let remaining = Array.tabulate<Types.PathPart>(
           parts.size() - 1,
-          func(i) = parts[i + 1]
+          func(i) = parts[i + 1],
         );
-        #Object([(key, setWithParts(#Null, remaining, newValue))])
+        #object_([(key, setWithParts(#null_, remaining, newValue))]);
       };
 
-      case (#Index(i), _) {
+      case (#index(i), _) {
         let remaining = Array.tabulate<Types.PathPart>(
           parts.size() - 1,
-          func(i) = parts[i + 1]
+          func(i) = parts[i + 1],
         );
-        let items = Array.tabulate<JSON>(
+        let items = Array.tabulate<Json>(
           i + 1,
-          func(idx : Nat) : JSON {
+          func(idx : Nat) : Json {
             if (idx == i) {
-              setWithParts(#Null, remaining, newValue)
+              setWithParts(#null_, remaining, newValue);
             } else {
-              #Null
-            }
-          }
+              #null_;
+            };
+          },
         );
-        #Array(items)
+        #array(items);
       };
 
-      case _ {json}
-    }
+      case _ { json };
+    };
   };
 
-  public func removeWithParts(json : JSON, parts : [Types.PathPart]) : JSON {
+  public func removeWithParts(json : Json, parts : [Types.PathPart]) : Json {
     if (parts.size() == 0) {
-      return #Null
+      return #null_;
     };
 
     switch (parts[0], json) {
-      case (#Key(key), #Object(entries)) {
+      case (#key(key), #object_(entries)) {
         if (parts.size() == 1) {
-          #Object(
-            Array.filter<(Text, JSON)>(
+          #object_(
+            Array.filter<(Text, Json)>(
               entries,
-              func((k, _) : (Text, JSON)) : Bool {k != key}
+              func((k, _) : (Text, Json)) : Bool { k != key },
             )
-          )
+          );
         } else {
           let remaining = Array.tabulate<Types.PathPart>(
             parts.size() - 1,
-            func(i) = parts[i + 1]
+            func(i) = parts[i + 1],
           );
 
-          #Object(
-            Array.map<(Text, JSON), (Text, JSON)>(
+          #object_(
+            Array.map<(Text, Json), (Text, Json)>(
               entries,
-              func((k, v) : (Text, JSON)) : (Text, JSON) {
-                if (k == key) {(k, removeWithParts(v, remaining))} else {(k, v)}
-              }
+              func((k, v) : (Text, Json)) : (Text, Json) {
+                if (k == key) { (k, removeWithParts(v, remaining)) } else {
+                  (k, v);
+                };
+              },
             )
-          )
-        }
+          );
+        };
       };
 
-      case (#Index(i), #Array(items)) {
+      case (#index(i), #array(items)) {
         if (i >= items.size()) {
-          return json
+          return json;
         };
 
         if (parts.size() == 1) {
-          #Array(
-            Array.tabulate<JSON>(
+          #array(
+            Array.tabulate<Json>(
               items.size() - 1,
-              func(idx : Nat) : JSON {
+              func(idx : Nat) : Json {
                 if (idx < i) {
-                  items[idx]
+                  items[idx];
                 } else {
-                  items[idx + 1]
-                }
-              }
+                  items[idx + 1];
+                };
+              },
             )
-          )
+          );
         } else {
           let remaining = Array.tabulate<Types.PathPart>(
             parts.size() - 1,
-            func(i) = parts[i + 1]
+            func(i) = parts[i + 1],
           );
 
-          #Array(
-            Array.tabulate<JSON>(
+          #array(
+            Array.tabulate<Json>(
               items.size(),
-              func(idx : Nat) : JSON {
+              func(idx : Nat) : Json {
                 if (idx == i) {
-                  removeWithParts(items[idx], remaining)
+                  removeWithParts(items[idx], remaining);
                 } else {
-                  items[idx]
-                }
-              }
+                  items[idx];
+                };
+              },
             )
-          )
-        }
+          );
+        };
       };
-      case _ {json}
-    }
+      case _ { json };
+    };
   };
 
-public func validate(instance : JSON, schema : Types.Schema) : Result.Result<(), Types.ValidationError> {
-  switch(schema) {
-    case (#Object{properties; required}) {
-      switch(instance) {
-        case (#Object(entries)) {
-          switch(required) {
-            case (?requiredFields) {
-              for (requiredKey in requiredFields.vals()) {
-                var found = false;
-                label checking for ((key, _) in entries.vals()) {
-                  if (key == requiredKey) {
-                    found := true;
-                    break checking;
+  public func validate(instance : Json, schema : Types.Schema) : Result.Result<(), Types.ValidationError> {
+    switch (schema) {
+      case (#object_ { properties; required }) {
+        switch (instance) {
+          case (#object_(entries)) {
+            switch (required) {
+              case (?requiredFields) {
+                for (requiredKey in requiredFields.vals()) {
+                  var found = false;
+                  label checking for ((key, _) in entries.vals()) {
+                    if (key == requiredKey) {
+                      found := true;
+                      break checking;
+                    };
+                  };
+                  if (not found) {
+                    return #err(#requiredField(requiredKey));
                   };
                 };
-                if (not found) {
-                  return #err(#RequiredField(requiredKey));
+              };
+              case null {};
+            };
+            for ((schemaKey, schemaType) in properties.vals()) {
+              for ((key, value) in entries.vals()) {
+                if (key == schemaKey) {
+                  switch (validate(value, schemaType)) {
+                    case (#err(e)) return #err(e);
+                    case (#ok()) {};
+                  };
                 };
               };
             };
-            case null {};
+            #ok();
           };
-          for ((schemaKey, schemaType) in properties.vals()) {
-            for ((key, value) in entries.vals()) {
-              if (key == schemaKey) {
-                switch(validate(value, schemaType)) {
-                  case (#err(e)) return #err(e);
-                  case (#ok()) {};
-                };
+          case (_) {
+            #err(
+              #typeError {
+                expected = "object";
+                got = Types.getTypeString(instance);
+                path = "";
+              }
+            );
+          };
+        };
+      };
+      case (#array { items }) {
+        switch (instance) {
+          case (#array(values)) {
+            for (value in values.vals()) {
+              switch (validate(value, items)) {
+                case (#err(e)) return #err(e);
+                case (#ok()) {};
               };
             };
+            #ok();
           };
-          #ok();
-        };
-        case (_) {
-          #err(#TypeError{
-            expected = "object";
-            got = Types.getTypeString(instance);
-            path = "";
-          });
-        };
-      };
-    };
-    case (#Array{items}) {
-      switch(instance) {
-        case (#Array(values)) {
-          for (value in values.vals()) {
-            switch(validate(value, items)) {
-              case (#err(e)) return #err(e);
-              case (#ok()) {};
-            };
+          case (_) {
+            #err(
+              #typeError {
+                expected = "array";
+                got = Types.getTypeString(instance);
+                path = "";
+              }
+            );
           };
-          #ok();
-        };
-        case (_) {
-          #err(#TypeError{
-            expected = "array";
-            got = Types.getTypeString(instance);
-            path = "";
-          });
         };
       };
-    };
-    case (#String) {
-      switch(instance) {
-        case (#String(_)) #ok();
-        case (_) {
-          #err(#TypeError{
-            expected = "string";
-            got = Types.getTypeString(instance);
-            path = "";
-          });
+      case (#string) {
+        switch (instance) {
+          case (#string(_)) #ok();
+          case (_) {
+            #err(
+              #typeError {
+                expected = "string";
+                got = Types.getTypeString(instance);
+                path = "";
+              }
+            );
+          };
         };
       };
-    };
-    case (#Number) {
-      switch(instance) {
-        case (#Number(_)) #ok();
-        case (_) {
-          #err(#TypeError{
-            expected = "number";
-            got = Types.getTypeString(instance);
-            path = "";
-          });
+      case (#number) {
+        switch (instance) {
+          case (#number(_)) #ok();
+          case (_) {
+            #err(
+              #typeError {
+                expected = "number";
+                got = Types.getTypeString(instance);
+                path = "";
+              }
+            );
+          };
         };
       };
-    };
-    case (#Boolean) {
-      switch(instance) {
-        case (#Bool(_)) #ok();
-        case (_) {
-          #err(#TypeError{
-            expected = "boolean";
-            got = Types.getTypeString(instance);
-            path = "";
-          });
+      case (#boolean) {
+        switch (instance) {
+          case (#bool(_)) #ok();
+          case (_) {
+            #err(
+              #typeError {
+                expected = "boolean";
+                got = Types.getTypeString(instance);
+                path = "";
+              }
+            );
+          };
         };
       };
-    };
-    case (#Null) {
-      switch(instance) {
-        case (#Null) #ok();
-        case (_) {
-          #err(#TypeError{
-            expected = "null";
-            got = Types.getTypeString(instance);
-            path = "";
-          });
+      case (#null_) {
+        switch (instance) {
+          case (#null_) #ok();
+          case (_) {
+            #err(
+              #typeError {
+                expected = "null";
+                got = Types.getTypeString(instance);
+                path = "";
+              }
+            );
+          };
         };
       };
     };
   };
 };
-}
