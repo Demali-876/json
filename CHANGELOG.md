@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/Demali-876/json/compare/v0.2.2...v0.2.3) (2025-02-03)
+
+
+### Documentation
+
+* fix quotation ([#7](https://github.com/Demali-876/json/issues/7)) ([f1adbf6](https://github.com/Demali-876/json/commit/f1adbf6bbda6d08c2bde5896eda7a439123e0318))
+
 ## [0.2.2](https://github.com/Demali-876/json/compare/v0.2.1...v0.2.2) (2025-01-18)
 
 
