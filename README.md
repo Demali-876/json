@@ -79,7 +79,7 @@ Path syntax:
 
 - Use dots for object properties: "user.name"
 - Use brackets for array indices: "users[0]"
-- Use wildcards for multiple matches: "users.*.name"
+- Use wildcards for multiple matches: "users.\*.name"
 
 Example:
 
@@ -95,6 +95,8 @@ let data = obj([
 
 // Get a specific value
 let name = JSON.get(data, "users[0].name");  // Returns ?#String("John")
+// Or get text value
+let nameText = JSON.getAsText(data, "users[0].name"); // Returns Result.Result<Text, JSON.GetAsError>
 
 // Get multiple values using wildcard
 let allNames = JSON.get(data, "users.*.name");  // Returns array of all names
@@ -196,13 +198,13 @@ switch(JSON.parse(jsonText)) {
     case (#ok(data)) {
         // Get existing data
         let name = JSON.get(data, "users[0].name");
-        
+
         // Add new data
         let updated = JSON.set(data, "users[0].phone", str("+1234567890"));
-        
+
         // Remove sensitive data
         let cleaned = JSON.remove(updated, "users[0].email");
-        
+
         // Convert back to JSON text
         let finalJson = JSON.stringify(cleaned, null);
     };
@@ -229,7 +231,7 @@ public type Schema = {
     required : ?[Text];
   };
   #Array : {
-    items : Schema; 
+    items : Schema;
   };
   #String;
   #Number;
@@ -282,10 +284,12 @@ This library is in active development feedback and bug reports are welcome. Some
 - Schema validation is currently basic the plan is to support the full [JSON Schema specification](https://json-schema.org/) in future releases.
 
 1. Number Precision
+
    - Integers are limited to Motoko's Int bounds
    - Floats follow IEEE 754 double-precision format
 
 2. Object Keys
+
    - Must be strings
    - No duplicate keys (last one wins)
 
@@ -327,7 +331,7 @@ Path syntax rules:
 
 1. Use dots (.) for object property access
 2. Use brackets ([]) for array indices
-3. Use asterisk (*) as wildcard for multiple matches
+3. Use asterisk (\*) as wildcard for multiple matches
 4. Paths are case-sensitive
 5. Properties can contain any valid JSON string characters
 
