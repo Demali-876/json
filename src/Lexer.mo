@@ -5,8 +5,9 @@ import Char "mo:base/Char";
 import Text "mo:base/Text";
 import Nat32 "mo:base/Nat32";
 import Iter "mo:base/Iter";
-import Nat "mo:base/Nat";
 import Result "mo:base/Result";
+import NatX "mo:xtended-numbers/NatX";
+
 module {
   public class Lexer(text : Text) {
     let cursor = Cursor.Cursor(text);
@@ -55,11 +56,11 @@ module {
                   return #err(#invalidString("Invalid Unicode escape sequence: Expected exactly 4 hex digits"));
                 };
 
-                switch (Nat.fromText("0x" # hexCode)) {
+                switch (NatX.fromTextAdvanced(hexCode, #hexadecimal, null)) {
                   case (?natValue) {
                     if (natValue <= 0x10FFFF) {
                       strBuffer.add(Char.fromNat32(Nat32.fromNat(natValue)));
-                      cursor.advance(4);
+                      cursor.advance(3);
                     } else {
                       return #err(#invalidString("Unicode value exceeds maximum allowed (0x10FFFF)"));
                     };
@@ -179,15 +180,15 @@ module {
       };
     };
     private func tokenizeKeyWord() : ?Types.Token {
-      if (cursor.getPos() + 4 <= text.size()) {
-        let falsejson = cursor.substring(text, cursor.getPos(), (cursor.getPos() + 4));
+      if (cursor.getPos() + 5 <= text.size()) {
+        let falsejson = cursor.substring(text, cursor.getPos(), (cursor.getPos() + 5));
         if (Text.equal(falsejson, "false")) {
           cursor.advance(5);
           return ?#false_;
         };
       };
-      if (cursor.getPos() + 3 <= text.size()) {
-        let nullortrue = cursor.substring(text, cursor.getPos(), (cursor.getPos() + 3));
+      if (cursor.getPos() + 4 <= text.size()) {
+        let nullortrue = cursor.substring(text, cursor.getPos(), (cursor.getPos() + 4));
         if (Text.equal(nullortrue, "true")) {
           cursor.advance(4);
           ?#true_;
