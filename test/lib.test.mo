@@ -1,6 +1,7 @@
 import Json "../src/lib";
 import Debug "mo:base/Debug";
 import Result "mo:base/Result";
+import Text "mo:base/Text";
 import { test } "mo:test";
 import Types "../src/Types";
 
@@ -38,166 +39,204 @@ let fields = [
     ("bool", #bool(true)),
 ];
 let json = Json.obj(fields);
-test(
+
+testCases<Text, ?Json.Json>(
     "get",
-    func() {
-        assert (Json.get(json, "string") == ?#string("test"));
-        assert (Json.get(json, "positive-integer") == ?#number(#int(42)));
-        assert (Json.get(json, "negative-integer") == ?#number(#int(-1)));
-        assert (Json.get(json, "zero") == ?#number(#int(0)));
-        assert (Json.get(json, "float") == ?#number(#float(3.14)));
-        assert (Json.get(json, "array") == ?#array([#string("a"), #number(#int(1))]));
-        assert (Json.get(json, "array.[0]") == ?#string("a"));
-        assert (Json.get(json, "array.[1]") == ?#number(#int(1)));
-        assert (Json.get(json, "array.[2]") == null);
-        assert (Json.get(json, "object") == ?#object_([("a", #string("b")), ("c", #number(#int(2)))]));
-        assert (Json.get(json, "object.a") == ?#string("b"));
-        assert (Json.get(json, "object.c") == ?#number(#int(2)));
-        assert (Json.get(json, "object.d") == null);
-        assert (Json.get(json, "null") == ?#null_);
-        assert (Json.get(json, "bool") == ?#bool(true));
-        assert (Json.get(json, "a") == null);
+    func(c : Text) : ?Json.Json {
+        Json.get(json, c);
     },
+    func(x : ?Json.Json, y : ?Json.Json) : Bool = x == y,
+    func(x : Text) : Text = x,
+    func(x : ?Json.Json) : Text = debug_show (x),
+    [
+        ("string", ?#string("test")),
+        ("positive-integer", ?#number(#int(42))),
+        ("negative-integer", ?#number(#int(-1))),
+        ("zero", ?#number(#int(0))),
+        ("float", ?#number(#float(3.14))),
+        ("array", ?#array([#string("a"), #number(#int(1))])),
+        ("array.[0]", ?#string("a")),
+        ("array.[1]", ?#number(#int(1))),
+        ("array.[2]", null),
+        ("object", ?#object_([("a", #string("b")), ("c", #number(#int(2)))])),
+        ("object.a", ?#string("b")),
+        ("object.c", ?#number(#int(2))),
+        ("object.d", null),
+        ("null", ?#null_),
+        ("bool", ?#bool(true)),
+        ("a", null),
+    ],
 );
 
-test(
+testCases<Text, Result.Result<Nat, Json.GetAsError>>(
     "getAsNat",
-    func() {
-        assert (Json.getAsNat(json, "string") == #err(#typeMismatch));
-        assert (Json.getAsNat(json, "positive-integer") == #ok(42));
-        assert (Json.getAsNat(json, "negative-integer") == #err(#typeMismatch));
-        assert (Json.getAsNat(json, "zero") == #ok(0));
-        assert (Json.getAsNat(json, "float") == #err(#typeMismatch));
-        assert (Json.getAsNat(json, "array") == #err(#typeMismatch));
-        assert (Json.getAsNat(json, "array.[0]") == #err(#typeMismatch));
-        assert (Json.getAsNat(json, "array.[1]") == #ok(1));
-        assert (Json.getAsNat(json, "object") == #err(#typeMismatch));
-        assert (Json.getAsNat(json, "object.a") == #err(#typeMismatch));
-        assert (Json.getAsNat(json, "object.c") == #ok(2));
-        assert (Json.getAsNat(json, "null") == #err(#typeMismatch));
-        assert (Json.getAsNat(json, "bool") == #err(#typeMismatch));
-        assert (Json.getAsNat(json, "a") == #err(#pathNotFound));
-    },
+    func(c : Text) : Result.Result<Nat, Json.GetAsError> = Json.getAsNat(json, c),
+    func(x : Result.Result<Nat, Json.GetAsError>, y : Result.Result<Nat, Json.GetAsError>) : Bool = x == y,
+    func(x : Text) : Text = x,
+    func(x : Result.Result<Nat, Json.GetAsError>) : Text = debug_show (x),
+    [
+        ("string", #err(#typeMismatch)),
+        ("positive-integer", #ok(42)),
+        ("negative-integer", #err(#typeMismatch)),
+        ("zero", #ok(0)),
+        ("float", #err(#typeMismatch)),
+        ("array", #err(#typeMismatch)),
+        ("array.[0]", #err(#typeMismatch)),
+        ("array.[1]", #ok(1)),
+        ("object", #err(#typeMismatch)),
+        ("object.a", #err(#typeMismatch)),
+        ("object.c", #ok(2)),
+        ("null", #err(#typeMismatch)),
+        ("bool", #err(#typeMismatch)),
+        ("a", #err(#pathNotFound)),
+    ],
 );
 
-test(
+testCases<Text, Result.Result<Int, Json.GetAsError>>(
     "getAsInt",
-    func() {
-        assert (Json.getAsInt(json, "string") == #err(#typeMismatch));
-        assert (Json.getAsInt(json, "positive-integer") == #ok(42));
-        assert (Json.getAsInt(json, "negative-integer") == #ok(-1));
-        assert (Json.getAsInt(json, "zero") == #ok(0));
-        assert (Json.getAsInt(json, "float") == #err(#typeMismatch));
-        assert (Json.getAsInt(json, "array") == #err(#typeMismatch));
-        assert (Json.getAsInt(json, "array.[0]") == #err(#typeMismatch));
-        assert (Json.getAsInt(json, "array.[1]") == #ok(1));
-        assert (Json.getAsInt(json, "object") == #err(#typeMismatch));
-        assert (Json.getAsInt(json, "object.a") == #err(#typeMismatch));
-        assert (Json.getAsInt(json, "object.c") == #ok(2));
-        assert (Json.getAsInt(json, "null") == #err(#typeMismatch));
-        assert (Json.getAsInt(json, "bool") == #err(#typeMismatch));
-        assert (Json.getAsInt(json, "a") == #err(#pathNotFound));
-    },
+    func(c : Text) : Result.Result<Int, Json.GetAsError> = Json.getAsInt(json, c),
+    func(x : Result.Result<Int, Json.GetAsError>, y : Result.Result<Int, Json.GetAsError>) : Bool = x == y,
+    func(x : Text) : Text = x,
+    func(x : Result.Result<Int, Json.GetAsError>) : Text = debug_show (x),
+    [
+        ("string", #err(#typeMismatch)),
+        ("positive-integer", #ok(42)),
+        ("negative-integer", #ok(-1)),
+        ("zero", #ok(0)),
+        ("float", #err(#typeMismatch)),
+        ("array", #err(#typeMismatch)),
+        ("array.[0]", #err(#typeMismatch)),
+        ("array.[1]", #ok(1)),
+        ("object", #err(#typeMismatch)),
+        ("object.a", #err(#typeMismatch)),
+        ("object.c", #ok(2)),
+        ("null", #err(#typeMismatch)),
+        ("bool", #err(#typeMismatch)),
+        ("a", #err(#pathNotFound)),
+    ],
 );
 
-test(
+testCases<Text, Result.Result<Float, Json.GetAsError>>(
     "getAsFloat",
-    func() {
-        assert (Json.getAsFloat(json, "string") == #err(#typeMismatch));
-        assert (Json.getAsFloat(json, "positive-integer") == #ok(42.0));
-        assert (Json.getAsFloat(json, "negative-integer") == #ok(-1.0));
-        assert (Json.getAsFloat(json, "zero") == #ok(0.0));
-        assert (Json.getAsFloat(json, "float") == #ok(3.14));
-        assert (Json.getAsFloat(json, "array") == #err(#typeMismatch));
-        assert (Json.getAsFloat(json, "array.[0]") == #err(#typeMismatch));
-        assert (Json.getAsFloat(json, "array.[1]") == #ok(1.0));
-        assert (Json.getAsFloat(json, "object") == #err(#typeMismatch));
-        assert (Json.getAsFloat(json, "object.a") == #err(#typeMismatch));
-        assert (Json.getAsFloat(json, "object.c") == #ok(2.0));
-        assert (Json.getAsFloat(json, "null") == #err(#typeMismatch));
-        assert (Json.getAsFloat(json, "bool") == #err(#typeMismatch));
-        assert (Json.getAsFloat(json, "a") == #err(#pathNotFound));
-    },
+    func(c : Text) : Result.Result<Float, Json.GetAsError> = Json.getAsFloat(json, c),
+    func(x : Result.Result<Float, Json.GetAsError>, y : Result.Result<Float, Json.GetAsError>) : Bool = x == y,
+    func(x : Text) : Text = x,
+    func(x : Result.Result<Float, Json.GetAsError>) : Text = debug_show (x),
+    [
+        ("string", #err(#typeMismatch)),
+        ("positive-integer", #ok(42.0)),
+        ("negative-integer", #ok(-1.0)),
+        ("zero", #ok(0.0)),
+        ("float", #ok(3.14)),
+        ("array", #err(#typeMismatch)),
+        ("array.[0]", #err(#typeMismatch)),
+        ("array.[1]", #ok(1.0)),
+        ("object", #err(#typeMismatch)),
+        ("object.a", #err(#typeMismatch)),
+        ("object.c", #ok(2.0)),
+        ("null", #err(#typeMismatch)),
+        ("bool", #err(#typeMismatch)),
+        ("a", #err(#pathNotFound)),
+    ],
 );
 
-test(
+testCases<Text, Result.Result<Bool, Json.GetAsError>>(
     "getAsBool",
-    func() {
-        assert (Json.getAsBool(json, "string") == #err(#typeMismatch));
-        assert (Json.getAsBool(json, "positive-integer") == #err(#typeMismatch));
-        assert (Json.getAsBool(json, "negative-integer") == #err(#typeMismatch));
-        assert (Json.getAsBool(json, "zero") == #err(#typeMismatch));
-        assert (Json.getAsBool(json, "float") == #err(#typeMismatch));
-        assert (Json.getAsBool(json, "array") == #err(#typeMismatch));
-        assert (Json.getAsBool(json, "array.[0]") == #err(#typeMismatch));
-        assert (Json.getAsBool(json, "array.[1]") == #err(#typeMismatch));
-        assert (Json.getAsBool(json, "object") == #err(#typeMismatch));
-        assert (Json.getAsBool(json, "object.a") == #err(#typeMismatch));
-        assert (Json.getAsBool(json, "object.c") == #err(#typeMismatch));
-        assert (Json.getAsBool(json, "null") == #err(#typeMismatch));
-        assert (Json.getAsBool(json, "bool") == #ok(true));
-        assert (Json.getAsBool(json, "a") == #err(#pathNotFound));
-    },
+    func(c : Text) : Result.Result<Bool, Json.GetAsError> = Json.getAsBool(json, c),
+    func(x : Result.Result<Bool, Json.GetAsError>, y : Result.Result<Bool, Json.GetAsError>) : Bool = x == y,
+    func(x : Text) : Text = x,
+    func(x : Result.Result<Bool, Json.GetAsError>) : Text = debug_show (x),
+    [
+        ("string", #err(#typeMismatch)),
+        ("positive-integer", #err(#typeMismatch)),
+        ("negative-integer", #err(#typeMismatch)),
+        ("zero", #err(#typeMismatch)),
+        ("float", #err(#typeMismatch)),
+        ("array", #err(#typeMismatch)),
+        ("array.[0]", #err(#typeMismatch)),
+        ("array.[1]", #err(#typeMismatch)),
+        ("object", #err(#typeMismatch)),
+        ("object.a", #err(#typeMismatch)),
+        ("object.c", #err(#typeMismatch)),
+        ("null", #err(#typeMismatch)),
+        ("bool", #ok(true)),
+        ("a", #err(#pathNotFound)),
+    ],
 );
 
-test(
+testCases<Text, Result.Result<Text, Json.GetAsError>>(
     "getAsText",
-    func() {
-        assert (Json.getAsText(json, "string") == #ok("test"));
-        assert (Json.getAsText(json, "positive-integer") == #err(#typeMismatch));
-        assert (Json.getAsText(json, "negative-integer") == #err(#typeMismatch));
-        assert (Json.getAsText(json, "zero") == #err(#typeMismatch));
-        assert (Json.getAsText(json, "float") == #err(#typeMismatch));
-        assert (Json.getAsText(json, "array") == #err(#typeMismatch));
-        assert (Json.getAsText(json, "array.[0]") == #ok("a"));
-        assert (Json.getAsText(json, "array.[1]") == #err(#typeMismatch));
-        assert (Json.getAsText(json, "object") == #err(#typeMismatch));
-        assert (Json.getAsText(json, "object.a") == #ok("b"));
-        assert (Json.getAsText(json, "object.c") == #err(#typeMismatch));
-        assert (Json.getAsText(json, "null") == #err(#typeMismatch));
-        assert (Json.getAsText(json, "bool") == #err(#typeMismatch));
-        assert (Json.getAsText(json, "a") == #err(#pathNotFound));
-    },
+    func(c : Text) : Result.Result<Text, Json.GetAsError> = Json.getAsText(json, c),
+    func(x : Result.Result<Text, Json.GetAsError>, y : Result.Result<Text, Json.GetAsError>) : Bool = x == y,
+    func(x : Text) : Text = x,
+    func(x : Result.Result<Text, Json.GetAsError>) : Text = debug_show (x),
+    [
+        ("string", #ok("test")),
+        ("positive-integer", #err(#typeMismatch)),
+        ("negative-integer", #err(#typeMismatch)),
+        ("zero", #err(#typeMismatch)),
+        ("float", #err(#typeMismatch)),
+        ("array", #err(#typeMismatch)),
+        ("array.[0]", #ok("a")),
+        ("array.[1]", #err(#typeMismatch)),
+        ("object", #err(#typeMismatch)),
+        ("object.a", #ok("b")),
+        ("object.c", #err(#typeMismatch)),
+        ("null", #err(#typeMismatch)),
+        ("bool", #err(#typeMismatch)),
+        ("a", #err(#pathNotFound)),
+    ],
 );
 
-test(
+testCases<Text, Result.Result<[Json.Json], Json.GetAsError>>(
     "getAsArray",
-    func() {
-        assert (Json.getAsArray(json, "string") == #err(#typeMismatch));
-        assert (Json.getAsArray(json, "positive-integer") == #err(#typeMismatch));
-        assert (Json.getAsArray(json, "negative-integer") == #err(#typeMismatch));
-        assert (Json.getAsArray(json, "zero") == #err(#typeMismatch));
-        assert (Json.getAsArray(json, "float") == #err(#typeMismatch));
-        assert (Json.getAsArray(json, "array") == #ok([#string("a"), #number(#int(1))]));
-        assert (Json.getAsArray(json, "array.[0]") == #err(#typeMismatch));
-        assert (Json.getAsArray(json, "array.[1]") == #err(#typeMismatch));
-        assert (Json.getAsArray(json, "object") == #err(#typeMismatch));
-        assert (Json.getAsArray(json, "object.a") == #err(#typeMismatch));
-        assert (Json.getAsArray(json, "object.c") == #err(#typeMismatch));
-        assert (Json.getAsArray(json, "null") == #err(#typeMismatch));
-        assert (Json.getAsArray(json, "bool") == #err(#typeMismatch));
-        assert (Json.getAsArray(json, "a") == #err(#pathNotFound));
-    },
+    func(c : Text) : Result.Result<[Json.Json], Json.GetAsError> = Json.getAsArray(json, c),
+    func(x : Result.Result<[Json.Json], Json.GetAsError>, y : Result.Result<[Json.Json], Json.GetAsError>) : Bool = x == y,
+    func(x : Text) : Text = x,
+    func(x : Result.Result<[Json.Json], Json.GetAsError>) : Text = debug_show (x),
+    [
+        ("string", #err(#typeMismatch)),
+        ("positive-integer", #err(#typeMismatch)),
+        ("negative-integer", #err(#typeMismatch)),
+        ("zero", #err(#typeMismatch)),
+        ("float", #err(#typeMismatch)),
+        ("array", #ok([#string("a"), #number(#int(1))])),
+        ("array.[0]", #err(#typeMismatch)),
+        ("array.[1]", #err(#typeMismatch)),
+        ("object", #err(#typeMismatch)),
+        ("object.a", #err(#typeMismatch)),
+        ("object.c", #err(#typeMismatch)),
+        ("null", #err(#typeMismatch)),
+        ("bool", #err(#typeMismatch)),
+        ("a", #err(#pathNotFound)),
+    ],
 );
 
-test(
+testCases<Text, Result.Result<[(Text, Json.Json)], Json.GetAsError>>(
     "getAsObject",
-    func() {
-        assert (Json.getAsObject(json, "string") == #err(#typeMismatch));
-        assert (Json.getAsObject(json, "positive-integer") == #err(#typeMismatch));
-        assert (Json.getAsObject(json, "negative-integer") == #err(#typeMismatch));
-        assert (Json.getAsObject(json, "zero") == #err(#typeMismatch));
-        assert (Json.getAsObject(json, "float") == #err(#typeMismatch));
-        assert (Json.getAsObject(json, "array") == #err(#typeMismatch));
-        assert (Json.getAsObject(json, "array.[0]") == #err(#typeMismatch));
-        assert (Json.getAsObject(json, "array.[1]") == #err(#typeMismatch));
-        assert (Json.getAsObject(json, "object") == #ok([("a", #string("b")), ("c", #number(#int(2)))]));
-        assert (Json.getAsObject(json, "object.a") == #err(#typeMismatch));
-        assert (Json.getAsObject(json, "object.c") == #err(#typeMismatch));
-        assert (Json.getAsObject(json, "null") == #err(#typeMismatch));
-        assert (Json.getAsObject(json, "bool") == #err(#typeMismatch));
-        assert (Json.getAsObject(json, "a") == #err(#pathNotFound));
-    },
+    func(c : Text) : Result.Result<[(Text, Json.Json)], Json.GetAsError> = Json.getAsObject(json, c),
+    func(x : Result.Result<[(Text, Json.Json)], Json.GetAsError>, y : Result.Result<[(Text, Json.Json)], Json.GetAsError>) : Bool = x == y,
+    func(x : Text) : Text = x,
+    func(x : Result.Result<[(Text, Json.Json)], Json.GetAsError>) : Text = debug_show (x),
+    [
+        ("string", #err(#typeMismatch)),
+        ("positive-integer", #err(#typeMismatch)),
+        ("negative-integer", #err(#typeMismatch)),
+        ("zero", #err(#typeMismatch)),
+        ("float", #err(#typeMismatch)),
+        ("array", #err(#typeMismatch)),
+        ("array.[0]", #err(#typeMismatch)),
+        ("array.[1]", #err(#typeMismatch)),
+        (
+            "object",
+            #ok([("a", #string("b")), ("c", #number(#int(2)))]),
+        ),
+        ("object.a", #err(#typeMismatch)),
+        ("object.c", #err(#typeMismatch)),
+        ("null", #err(#typeMismatch)),
+        ("bool", #err(#typeMismatch)),
+        ("a", #err(#pathNotFound)),
+    ],
 );
 
 testCases<Text, Result.Result<Json.Json, Types.Error>>(
