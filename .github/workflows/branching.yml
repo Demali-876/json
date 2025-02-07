@@ -1,13 +1,15 @@
 name: Auto Branch Management
+
 on:
   push:
     branches:
-      - master 
+      - master
     paths-ignore:
       - 'CHANGELOG.md'
       - 'package.json'
       - 'mops.toml'
       - 'VERSION'
+
 jobs:
   create-feature-branch:
     runs-on: ubuntu-latest
@@ -15,19 +17,20 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          
+
       - name: Install GitHub CLI
         run: |
-          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-          && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-          && sudo apt update \
-          && sudo apt install gh -y
+          sudo apt update && sudo apt install -y curl
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list
+          sudo apt update
+          sudo apt install gh -y
 
       - name: Create version labels
         run: |
@@ -36,7 +39,7 @@ jobs:
           gh label create patch --color 00FF00 --description "Patch version bump" || true
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
-          
+
       - name: Get commit message and SHA
         id: commit
         run: |
@@ -44,50 +47,50 @@ jobs:
           COMMIT_SHA=$(git rev-parse HEAD)
           echo "message=$COMMIT_MSG" >> $GITHUB_OUTPUT
           echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
-          
+
       - name: Create branch based on commit type
         run: |
           COMMIT_MSG="${{ steps.commit.outputs.message }}"
           CURRENT_SHA="${{ steps.commit.outputs.sha }}"
-          
-          if echo "$COMMIT_MSG" | grep -Eq "^(feat|fix|feat!|fix!):"; then
-            TYPE=$(echo "$COMMIT_MSG" | grep -Eo "^(feat|fix|feat!|fix!)")
-            DESCRIPTION=$(echo "$COMMIT_MSG" | sed 's/^[^:]*: *//' | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
-            
-            if [[ $TYPE == *"!"* ]]; then
+
+          # Detect commit type
+          if echo "$COMMIT_MSG" | grep -Eq "^(feat|fix|feat!|fix!):" || echo "$COMMIT_MSG" | grep -q "BREAKING CHANGE:"; then
+            if echo "$COMMIT_MSG" | grep -q "BREAKING CHANGE:" || echo "$COMMIT_MSG" | grep -q "!"; then
               BRANCH_PREFIX="breaking"
               VERSION_BUMP="major"
-            elif [[ $TYPE == "feat" ]]; then
+              DESCRIPTION=$(echo "$COMMIT_MSG" | grep -oP '(?<=BREAKING CHANGE: ).*' | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
+            elif echo "$COMMIT_MSG" | grep -q "^feat:"; then
               BRANCH_PREFIX="feature"
               VERSION_BUMP="minor"
+              DESCRIPTION=$(echo "$COMMIT_MSG" | sed 's/^[^:]*: *//' | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
             else
               BRANCH_PREFIX="fix"
               VERSION_BUMP="patch"
+              DESCRIPTION=$(echo "$COMMIT_MSG" | sed 's/^[^:]*: *//' | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
             fi
-            
+
             BRANCH_NAME="$BRANCH_PREFIX/$DESCRIPTION"
-            
+
             # Check if branch exists
             if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
               echo "Branch $BRANCH_NAME already exists, skipping PR creation"
               exit 0
             fi
-            
+
             # Create and push branch
             git config user.name "GitHub Action"
             git config user.email "action@github.com"
             git checkout -b "$BRANCH_NAME"
-            
+
             # Create a dummy change to ensure the branches differ
             echo "# Branch created from commit $CURRENT_SHA" > .branch-info
             git add .branch-info
             git commit -m "chore: initialize $BRANCH_NAME branch"
-            
+
             git push origin "$BRANCH_NAME"
-            
+
             gh pr create --title "$COMMIT_MSG" \
-                        --body "Automatic PR for $TYPE commit
-                               Version bump: $VERSION_BUMP" \
+                        --body "Automatic PR for $VERSION_BUMP version bump based on commit:\n\n**Commit Message:** $COMMIT_MSG\n\n**Version Bump:** $VERSION_BUMP" \
                         --base master \
                         --head "$BRANCH_NAME" \
                         --label "$VERSION_BUMP"
