@@ -43,7 +43,7 @@ jobs:
       - name: Get commit message and SHA
         id: commit
         run: |
-          COMMIT_MSG=$(git log -1 --pretty=%B)
+          COMMIT_MSG=$(git log -1 --pretty=%B | tr -d '\r' | sed ':a;N;$!ba;s/\n/\\n/g')
           COMMIT_SHA=$(git rev-parse HEAD)
           echo "message=$COMMIT_MSG" >> $GITHUB_OUTPUT
           echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
