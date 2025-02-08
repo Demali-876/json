@@ -1,7 +1,18 @@
 # Changelog
 
-## [0.2.3](https://github.com/Demali-876/json/compare/v0.2.2...v0.2.3) (2025-02-03)
+## [1.0.0](https://github.com/Demali-876/json/compare/v0.2.3...v1.0.0) (2025-02-07)
 
+### Breaking Changes
+  Variant Case Update: Changed the casing of variants from `UpperCamelCase` to `lowerCamelCase`.  
+  ([914486d](https://github.com/Demali-876/json/commit/914486d914486d914486d914486d914486d9144))  
+  
+  This change affects all APIs relying on the previous casing format. Please update your code to reflect the new casing to avoid compatibility issues.
+
+### Bug Fixes
+* Fix hex and boolean/null parsing: Corrected parsing issues for hexadecimal values and boolean (`true`, `false`) and `null` values.  
+  ([e6dd3ee](https://github.com/Demali-876/json/commit/e6dd3eef135219ebb60ee51b2c22324572e5bbfd))
+
+## [0.2.3](https://github.com/Demali-876/json/compare/v0.2.2...v0.2.3) (2025-02-03)
 
 ### Documentation
 
