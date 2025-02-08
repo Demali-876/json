@@ -5,11 +5,11 @@ import Result "mo:base/Result";
 import Text "mo:base/Text";
 import Int "mo:base/Int";
 import Float "mo:base/Float";
-module JSON {
-  public type JSON = Types.JSON;
+module Json {
+  public type Json = Types.Json;
   public type Replacer = {
-    #Function : (Text, JSON) -> ?JSON;
-    #Keys : [Text];
+    #function : (Text, Json) -> ?Json;
+    #keys : [Text];
   };
   public type GetAsError = {
     #pathNotFound;
@@ -19,31 +19,31 @@ module JSON {
   public type Error = Types.Error;
   public type Schema = Types.Schema;
   public type ValidationError = Types.ValidationError;
-  //JSON Type constructors
-  public func str(text : Text) : JSON = #String(text);
-  public func int(n : Int) : JSON = #Number(#Int(n));
-  public func float(n : Float) : JSON = #Number(#Float(n));
-  public func bool(b : Bool) : JSON = #Bool(b);
-  public func nullable() : JSON = #Null;
-  public func obj(entries : [(Text, JSON)]) : JSON = #Object(entries);
-  public func arr(items : [JSON]) : JSON = #Array(items);
+  //Json Type constructors
+  public func str(text : Text) : Json = #string(text);
+  public func int(n : Int) : Json = #number(#int(n));
+  public func float(n : Float) : Json = #number(#float(n));
+  public func bool(b : Bool) : Json = #bool(b);
+  public func nullable() : Json = #null_;
+  public func obj(entries : [(Text, Json)]) : Json = #object_(entries);
+  public func arr(items : [Json]) : Json = #array(items);
   //Schema Type constructors
-  public func string() : Types.Schema = #String;
-  public func number() : Types.Schema = #Number;
-  public func boolean() : Types.Schema = #Boolean;
-  public func nullSchema() : Types.Schema = #Null;
-  public func array(itemSchema : Types.Schema) : Types.Schema = #Array({
+  public func string() : Types.Schema = #string;
+  public func number() : Types.Schema = #number;
+  public func boolean() : Types.Schema = #boolean;
+  public func nullSchema() : Types.Schema = #null_;
+  public func array(itemSchema : Types.Schema) : Types.Schema = #array({
     items = itemSchema;
   });
   public func schemaObject(
     properties : [(Text, Types.Schema)],
     required : ?[Text],
-  ) : Types.Schema = #Object({
+  ) : Types.Schema = #object_({
     properties;
     required;
   });
 
-  public func parse(input : Text) : Result.Result<Types.JSON, Types.Error> {
+  public func parse(input : Text) : Result.Result<Types.Json, Types.Error> {
     let lexer = Lexer.Lexer(input);
     let tokens = switch (lexer.tokenize()) {
       case (#ok(tokens)) { tokens };
@@ -53,27 +53,27 @@ module JSON {
     parser.parse();
   };
 
-  public func stringify(json : JSON, replacer : ?Replacer) : Text {
+  public func stringify(json : Json, replacer : ?Replacer) : Text {
     switch (replacer) {
       case (null) {
         Types.toText(json);
       };
-      case (?#Function(fn)) {
+      case (?#function(fn)) {
         Types.toText(Types.transform(json, fn, ""));
       };
-      case (?#Keys(allowedKeys)) {
+      case (?#keys(allowedKeys)) {
         Types.toText(Types.filterByKeys(json, allowedKeys));
       };
     };
   };
-  public func get(json : JSON, path : Types.Path) : ?JSON {
+  public func get(json : Json, path : Types.Path) : ?Json {
     let parts = Parser.parsePath(path);
     Parser.getWithParts(json, parts);
   };
 
-  public func getAsNat(json : JSON, path : Types.Path) : Result.Result<Nat, GetAsError> {
+  public func getAsNat(json : Json, path : Types.Path) : Result.Result<Nat, GetAsError> {
     let ?value = get(json, path) else return #err(#pathNotFound);
-    let #Number(#Int(intValue)) = value else return #err(#typeMismatch);
+    let #number(#int(intValue)) = value else return #err(#typeMismatch);
     if (intValue < 0) {
       // Must be a positive integer
       return #err(#typeMismatch);
@@ -81,55 +81,55 @@ module JSON {
     #ok(Int.abs(intValue));
   };
 
-  public func getAsInt(json : JSON, path : Types.Path) : Result.Result<Int, GetAsError> {
+  public func getAsInt(json : Json, path : Types.Path) : Result.Result<Int, GetAsError> {
     let ?value = get(json, path) else return #err(#pathNotFound);
-    let #Number(#Int(intValue)) = value else return #err(#typeMismatch);
+    let #number(#int(intValue)) = value else return #err(#typeMismatch);
     #ok(intValue);
   };
 
-  public func getAsFloat(json : JSON, path : Types.Path) : Result.Result<Float, GetAsError> {
+  public func getAsFloat(json : Json, path : Types.Path) : Result.Result<Float, GetAsError> {
     let ?value = get(json, path) else return #err(#pathNotFound);
-    let #Number(numberValue) = value else return #err(#typeMismatch);
+    let #number(numberValue) = value else return #err(#typeMismatch);
     let floatValue = switch (numberValue) {
-      case (#Int(intValue)) { Float.fromInt(intValue) };
-      case (#Float(floatValue)) { floatValue };
+      case (#int(intValue)) { Float.fromInt(intValue) };
+      case (#float(floatValue)) { floatValue };
     };
     #ok(floatValue);
   };
 
-  public func getAsBool(json : JSON, path : Types.Path) : Result.Result<Bool, GetAsError> {
+  public func getAsBool(json : Json, path : Types.Path) : Result.Result<Bool, GetAsError> {
     let ?value = get(json, path) else return #err(#pathNotFound);
-    let #Bool(boolValue) = value else return #err(#typeMismatch);
+    let #bool(boolValue) = value else return #err(#typeMismatch);
     #ok(boolValue);
   };
 
-  public func getAsText(json : JSON, path : Types.Path) : Result.Result<Text, GetAsError> {
+  public func getAsText(json : Json, path : Types.Path) : Result.Result<Text, GetAsError> {
     let ?value = get(json, path) else return #err(#pathNotFound);
-    let #String(text) = value else return #err(#typeMismatch);
+    let #string(text) = value else return #err(#typeMismatch);
     #ok(text);
   };
 
-  public func getAsArray(json : JSON, path : Types.Path) : Result.Result<[JSON], GetAsError> {
+  public func getAsArray(json : Json, path : Types.Path) : Result.Result<[Json], GetAsError> {
     let ?value = get(json, path) else return #err(#pathNotFound);
-    let #Array(items) = value else return #err(#typeMismatch);
+    let #array(items) = value else return #err(#typeMismatch);
     #ok(items);
   };
 
-  public func getAsObject(json : JSON, path : Types.Path) : Result.Result<[(Text, JSON)], GetAsError> {
+  public func getAsObject(json : Json, path : Types.Path) : Result.Result<[(Text, Json)], GetAsError> {
     let ?value = get(json, path) else return #err(#pathNotFound);
-    let #Object(entries) = value else return #err(#typeMismatch);
+    let #object_(entries) = value else return #err(#typeMismatch);
     #ok(entries);
   };
 
-  public func set(json : JSON, path : Types.Path, newValue : JSON) : JSON {
+  public func set(json : Json, path : Types.Path, newValue : Json) : Json {
     let parts = Parser.parsePath(path);
     Parser.setWithParts(json, parts, newValue);
   };
-  public func remove(json : JSON, path : Types.Path) : JSON {
+  public func remove(json : Json, path : Types.Path) : Json {
     let parts = Parser.parsePath(path);
     Parser.removeWithParts(json, parts);
   };
-  public func validate(json : JSON, schema : Types.Schema) : Result.Result<(), Types.ValidationError> {
+  public func validate(json : Json, schema : Types.Schema) : Result.Result<(), Types.ValidationError> {
     Parser.validate(json, schema);
   };
 };
