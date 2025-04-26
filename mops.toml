@@ -1,6 +1,6 @@
 [package]
 name = "json"
-version = "1.0.0"
+version = "1.0.1"
 description = "JSON parser and stringifier for Motoko"
 repository = "https://github.com/Demali-876/json"
 keywords = [ "json", "parse", "stringfy", "validate" ]
