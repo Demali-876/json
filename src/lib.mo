@@ -17,6 +17,17 @@ module Json {
   };
   public type Path = Types.Path;
   public type Error = Types.Error;
+  public func errToText(e : Error) : Text {
+  switch (e) {
+    case (#invalidString(err)) { err };
+    case (#invalidNumber(err)) { err };
+    case (#invalidKeyword(err)) { err };
+    case (#invalidChar(err)) { err };
+    case (#invalidValue(err)) { err };
+    case (#unexpectedEOF()) { "Unexpected EOF" };
+    case (#unexpectedToken(err)) { err };
+    };
+  };
   public type Schema = Types.Schema;
   public type ValidationError = Types.ValidationError;
   //Json Type constructors

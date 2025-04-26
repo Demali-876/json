@@ -73,17 +73,6 @@ module {
     #unexpectedEOF;
     #unexpectedToken : Text;
   };
-  public func errToText(e : Error) : Text {
-  switch (e) {
-    case (#invalidString(err)) { err };
-    case (#invalidNumber(err)) { err };
-    case (#invalidKeyword(err)) { err };
-    case (#invalidChar(err)) { err };
-    case (#invalidValue(err)) { err };
-    case (#unexpectedEOF()) { "Unexpected EOF" };
-    case (#unexpectedToken(err)) { err };
-    };
-  };
 
   public func transform(json : Json, replacer : (Text, Json) -> ?Json, key : Text) : Json {
     let replaced = switch (replacer(key, json)) {
