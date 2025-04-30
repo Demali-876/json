@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1 (2025-02-07)
+
+### New Feature
+
+  **Error to Text Conversion**: Added `errToText(e)` function to convert `Error` variants into `Text` strings.
+  **Commit**:([914486d](https://github.com/Demali-876/json/commit/efcdb59612ae7ef2ba1e79f6b2d786fe0495317c))  
+
 ## [1.0.0](https://github.com/Demali-876/json/compare/v0.2.3...v1.0.0) (2025-02-07)
 
 ### Breaking Changes
