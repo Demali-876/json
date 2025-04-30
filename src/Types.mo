@@ -4,6 +4,7 @@ import Int "mo:base/Int";
 import Int32 "mo:base/Int32";
 import Float "mo:base/Float";
 import Bool "mo:base/Bool";
+import Iter "mo:base/Iter";
 import Array "mo:base/Array";
 
 module {
@@ -162,109 +163,195 @@ module {
       case (#null_) { "null" };
     };
   };
-  public func parseFloat(text : Text) : ?Float {
+  func charToInt(c : Char) : Int {
+    Int32.toInt(Int32.fromNat32(Char.toNat32(c) - 48));
+  };
+
+  public func textToFloat(text : Text) : ?Float {
     var integer : Int = 0;
     var fraction : Float = 0;
-    var exponent : Int = 0;
     var isNegative = false;
-    var position = 0;
+    var position : Nat = 0;
     let chars = text.chars();
+
+    if (Text.size(text) == 0) {
+      return null
+    };
+    let firstchar = Text.toArray(text)[0];
+
+    if(firstchar == '-' and text.size()== 1){
+      return null;
+    };
+    if (firstchar == 'e' or firstchar == 'E'){
+      return null
+    };
 
     switch (chars.next()) {
       case (?'-') {
         isNegative := true;
+        position += 1
+      };
+      case (?'+') {
+        position += 1
+      };
+      case (?'.') {
         position += 1;
+        switch (chars.next()) {
+          case (?d) if (Char.isDigit(d)) {
+            fraction := 0.1 * Float.fromInt(charToInt(d));
+            position += 1
+          };
+          case (_) { return null }
+        }
       };
       case (?d) if (Char.isDigit(d)) {
-        integer := Int32.toInt(Int32.fromNat32(Char.toNat32(d) - 48));
-        position += 1;
+        integer := charToInt(d);
+        position += 1
       };
-      case (_) { return null };
+      case (_) { return null }
     };
 
-    label integerPart loop {
+    var hasDigits = position > 0;
+    label integer loop {
       switch (chars.next()) {
         case (?d) {
           if (Char.isDigit(d)) {
-            integer := integer * 10 + Int32.toInt(Int32.fromNat32(Char.toNat32(d) - 48));
+            integer := integer * 10 + charToInt(d);
             position += 1;
+            hasDigits := true
           } else if (d == '.') {
             position += 1;
-            break integerPart;
+            break integer
           } else if (d == 'e' or d == 'E') {
             position += 1;
-            break integerPart;
+            if (not hasDigits) {
+              return null
+            };
+
+            var expResult = parseExponent(chars);
+            switch (expResult) {
+              case (null) {
+                return null;
+              };
+              case (?(expValue, _)) {
+                // Calculate final value with exponent
+                let base = Float.fromInt(if (isNegative) -integer else integer) +
+                (if (isNegative) -fraction else fraction);
+                let multiplier = Float.pow(10, Float.fromInt(expValue));
+                return ?(base * multiplier)
+              }
+            }
           } else {
-            return null;
-          };
+            return null
+          }
         };
         case (null) {
-          return ?(Float.fromInt(if (isNegative) -integer else integer));
-        };
-      };
+          if (not hasDigits) {
+            return null;
+          };
+          return ?(Float.fromInt(if (isNegative) -integer else integer))
+        }
+      }
     };
 
     var fractionMultiplier : Float = 0.1;
-    label fractionPart loop {
+    var hasFractionDigits = false;
+
+    label fraction loop {
       switch (chars.next()) {
         case (?d) {
           if (Char.isDigit(d)) {
-            fraction += fractionMultiplier * Float.fromInt(Int32.toInt(Int32.fromNat32(Char.toNat32(d) - 48)));
+            fraction += fractionMultiplier * Float.fromInt(charToInt(d));
             fractionMultiplier *= 0.1;
             position += 1;
+            hasFractionDigits := true
           } else if (d == 'e' or d == 'E') {
             position += 1;
-            break fractionPart;
+
+            if (not (hasDigits or hasFractionDigits)) {
+              return null
+            };
+
+            // Handle exponent part
+            var expResult = parseExponent(chars);
+            switch (expResult) {
+              case (null) {
+                return null; // Invalid exponent format
+              };
+              case (?(expValue, _)) {
+                // Calculate final value with exponent
+                let base = Float.fromInt(if (isNegative) -integer else integer) +
+                (if (isNegative) -fraction else fraction);
+                let multiplier = Float.pow(10, Float.fromInt(expValue));
+                return ?(base * multiplier)
+              }
+            }
           } else {
-            return null;
-          };
+            return null
+          }
         };
         case (null) {
+          // End of input - return complete number
           let result = Float.fromInt(if (isNegative) -integer else integer) +
           (if (isNegative) -fraction else fraction);
-          return ?result;
-        };
-      };
+          return ?result
+        }
+      }
     };
 
+    return null;
+  };
+
+  func parseExponent(chars : Iter.Iter<Char>) : ?(Int, Nat) {
+    var exponent : Int = 0;
     var expIsNegative = false;
+    var position = 0;
+    var hasDigits = false;
+
+    // Parse optional sign or first digit
     switch (chars.next()) {
       case (?d) {
         if (d == '-') {
           expIsNegative := true;
-          position += 1;
+          position += 1
         } else if (d == '+') {
-          position += 1;
+          position += 1
         } else if (Char.isDigit(d)) {
-          exponent := Int32.toInt(Int32.fromNat32(Char.toNat32(d) - 48));
+          exponent := charToInt(d);
           position += 1;
+          hasDigits := true
         } else {
-          return null;
-        };
+          return null
+        }
       };
-      case (null) { return null };
+      case (null) {return null};
     };
 
-    label exponentPart loop {
+    label exponent loop {
       switch (chars.next()) {
         case (?d) {
           if (Char.isDigit(d)) {
-            exponent := exponent * 10 + Int32.toInt(Int32.fromNat32(Char.toNat32(d) - 48));
+            exponent := exponent * 10 + charToInt(d);
             position += 1;
+            hasDigits := true
           } else {
             return null;
-          };
+          }
         };
         case (null) {
-          let base = Float.fromInt(if (isNegative) -integer else integer) +
-          (if (isNegative) -fraction else fraction);
-          let multiplier = Float.pow(10, Float.fromInt(if (expIsNegative) -exponent else exponent));
-          return ?(base * multiplier);
-        };
-      };
+          if (not hasDigits) {
+            return null;
+          };
+          return ?(if (expIsNegative) -exponent else exponent, position)
+        }
+      }
     };
 
     return null;
+  };
+
+  public func texttofloat(t:Text): async ?Float{
+    textToFloat(t);
   };
   public func parseInt(text : Text) : ?Int {
     var int : Int = 0;

@@ -164,7 +164,7 @@ module {
       let numberStr = Text.fromIter(Iter.fromArray(Buffer.toArray(numberBuffer)));
 
       if (isFloat) {
-        switch (Types.parseFloat(numberStr)) {
+        switch (Types.textToFloat(numberStr)) {
           case (?num) { #ok(#number(#float(num))) };
           case null {
             #err(#invalidNumber("Invalid floating point number format"));
