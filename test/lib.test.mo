@@ -267,3 +267,44 @@ testCases<Text, Result.Result<Json.Json, Types.Error>>(
         ("{ \"users\": [ { \"id\": 1, \"name\": \"Alice\", \"email\": \"alice@example.com\", \"orders\": [ { \"orderId\": \"A123\", \"items\": [ {\"product\": \"Laptop\", \"price\": 999.99}, {\"product\": \"Mouse\", \"price\": 24.99} ] } ] }, { \"id\": 2, \"name\": \"Bob\", \"email\": \"bob@example.com\", \"orders\": [] } ], \"metadata\": { \"lastUpdated\": \"2024-01-10\" } }", #ok(#object_([("users", #array([#object_([("id", #number(#int(1))), ("name", #string("Alice")), ("email", #string("alice@example.com")), ("orders", #array([#object_([("orderId", #string("A123")), ("items", #array([#object_([("product", #string("Laptop")), ("price", #number(#float(999.99)))]), #object_([("product", #string("Mouse")), ("price", #number(#float(24.99)))])]))])]))]), #object_([("id", #number(#int(2))), ("name", #string("Bob")), ("email", #string("bob@example.com")), ("orders", #array([]))])])), ("metadata", #object_([("lastUpdated", #string("2024-01-10"))]))]))),
     ],
 );
+
+test(
+    "stringify",
+    func() {
+        type TestCase = {
+            value : Json.Json;
+            expectedText : Text;
+        };
+        let testCases : [TestCase] = [
+            { value = #string("test"); expectedText = "\"test\"" },
+            { value = #number(#int(42)); expectedText = "42" },
+            {
+                value = #number(#float(3.14));
+                expectedText = "3.1400000000000001"; // Float precision does not match exactly
+            },
+            {
+                value = #number(#float(1.125));
+                expectedText = "1.125";
+            },
+            { value = #bool(true); expectedText = "true" },
+            { value = #null_; expectedText = "null" },
+            {
+                value = #array([#string("a"), #number(#int(1))]);
+                expectedText = "[\"a\",1]";
+            },
+            {
+                value = #object_([("key", #string("value"))]);
+                expectedText = "{\"key\":\"value\"}";
+            },
+        ];
+
+        for (testCase in testCases.vals()) {
+            let result = Json.stringify(testCase.value, null);
+            if (result != testCase.expectedText) {
+                Debug.trap(
+                    "stringify failed\nInput: " # debug_show (testCase.value) # "\nExpected: " # testCase.expectedText # "\nActual: " # result
+                );
+            };
+        };
+    },
+);
