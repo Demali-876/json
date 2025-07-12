@@ -158,7 +158,7 @@ module {
       };
       case (#string(text)) { "\"" # text # "\"" };
       case (#number(#int(n))) { Int.toText(n) };
-      case (#number(#float(n))) { Float.toText(n) };
+      case (#number(#float(n))) { Float.format(#exact, n) };
       case (#bool(b)) { Bool.toText(b) };
       case (#null_) { "null" };
     };
