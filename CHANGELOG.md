@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.1.0](https://github.com/Demali-876/json/compare/v1.0.0...v1.1.0) (2025-07-28)
+
+
+### Features
+
+* errtotext() ([6e2ce61](https://github.com/Demali-876/json/commit/6e2ce6113130d42985fc4ede071f5c5fe491febd))
+* errToText() function ([efcdb59](https://github.com/Demali-876/json/commit/efcdb59612ae7ef2ba1e79f6b2d786fe0495317c))
+
+
+### Bug Fixes
+
+* add escape characters ([#20](https://github.com/Demali-876/json/issues/20)) ([567784f](https://github.com/Demali-876/json/commit/567784ff75dd8d71785a10c0831e55038e5a226b))
+* text to float function ([4fbf344](https://github.com/Demali-876/json/commit/4fbf34446c19540e33a522069585ee4cf53dd353))
+* toText floats no longer include underscores ([#18](https://github.com/Demali-876/json/issues/18)) ([b84d165](https://github.com/Demali-876/json/commit/b84d165a76653eaeeb492ecda771da21d31f5edc))
+
 ## 1.1.1 (2025-02-07)
 
 ### New Feature
