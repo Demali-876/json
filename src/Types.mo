@@ -6,6 +6,8 @@ import Float "mo:base/Float";
 import Bool "mo:base/Bool";
 import Iter "mo:base/Iter";
 import Array "mo:base/Array";
+import Buffer "mo:base/Buffer";
+import Nat32 "mo:base/Nat32";
 
 module {
   public type Path = Text;
@@ -132,6 +134,52 @@ module {
     let arr = Text.toArray(t);
     arr[i];
   };
+  func to4DigitHex(n: Nat32) : Text {
+    let hex_chars = "0123456789abcdef";
+    var s = "";
+    var i = n;
+    var counter : Nat = 0;
+
+    while (counter < 4) {
+      // Get the last 4 bits to find the hex character index.
+      let index = Nat32.toNat(i & 0xF);
+      // Prepend the character to build the string in the correct order.
+      s := Text.fromChar(Text.toArray(hex_chars)[index]) # s;
+      // Shift bits for the next character.
+      i >>= 4;
+      // Increment the counter.
+      counter += 1;
+    };
+    return s;
+  };
+  // A helper function to correctly escape a string for JSON.
+  public func escape(s: Text) : Text {
+    let buf = Buffer.Buffer<Text>(s.size()); // Pre-allocate buffer for performance.
+    for (c in s.chars()) {
+      switch (c) {
+        case ('\"') { buf.add("\\\"") };
+        case ('\\') { buf.add("\\\\") };
+        case ('\n') { buf.add("\\n") };
+        case ('\r') { buf.add("\\r") };
+        case ('\t') { buf.add("\\t") };
+        // Note: Motoko Char doesn't have literals for \b and \f,
+        // so we handle them in the default case via their code points.
+        case _ {
+          let code = Char.toNat32(c);
+          if (code == 0x8) { // Backspace
+            buf.add("\\b");
+          } else if (code == 0xC) { // Form feed
+            buf.add("\\f");
+          } else if (code < 32) { // Other control characters (U+0000 to U+001F)
+            buf.add("\\u" # to4DigitHex(code));
+          } else { // A regular, non-special character.
+            buf.add(Text.fromChar(c));
+          };
+        };
+      };
+    };
+    return Buffer.foldLeft<Text, Text>(buf, "", func(acc, part) { acc # part });
+  };
   public func toText(json : Json) : Text {
     switch (json) {
       case (#object_(entries)) {
@@ -156,7 +204,7 @@ module {
         };
         result # "]";
       };
-      case (#string(text)) { "\"" # text # "\"" };
+      case (#string(text)) { "\"" # escape(text) # "\"" };
       case (#number(#int(n))) { Int.toText(n) };
       case (#number(#float(n))) { Float.format(#exact, n) };
       case (#bool(b)) { Bool.toText(b) };
