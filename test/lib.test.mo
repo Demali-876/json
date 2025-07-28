@@ -308,3 +308,110 @@ test(
         };
     },
 );
+
+test(
+    "stringify - special character escaping (Comprehensive)",
+    func() {
+        type TestCase = {
+            name: Text;
+            value : Json.Json;
+            expectedText : Text;
+        };
+
+        // A comprehensive list of test cases covering the JSON spec.
+        let testCases : [TestCase] = [
+            // --- Basic Required Escapes ---
+            {
+                name = "String with quotes";
+                value = #string("hello \"world\"");
+                expectedText = "\"hello \\\"world\\\"\"";
+            },
+            {
+                name = "String with backslash";
+                value = #string("C:\\Users\\");
+                expectedText = "\"C:\\\\Users\\\\\"";
+            },
+            {
+                name = "String with newline";
+                value = #string("line1\nline2");
+                expectedText = "\"line1\\nline2\"";
+            },
+            {
+                name = "String with carriage return";
+                value = #string("line1\rline2");
+                expectedText = "\"line1\\rline2\"";
+            },
+            {
+                name = "String with tab";
+                value = #string("col1\tcol2");
+                expectedText = "\"col1\\tcol2\"";
+            },
+            {
+                // Motoko uses \u{...} for unicode literals. 0x8 is backspace.
+                name = "String with backspace (\\b)";
+                value = #string("a\u{8}b");
+                expectedText = "\"a\\bb\"";
+            },
+            {
+                // 0xC is form feed.
+                name = "String with form feed (\\f)";
+                value = #string("a\u{c}b");
+                expectedText = "\"a\\fb\"";
+            },
+
+            // --- Control Character Escapes (\uXXXX) ---
+            {
+                // U+0000 (null character) must be escaped.
+                name = "Control character NULL (U+0000)";
+                value = #string("\u{0}");
+                expectedText = "\"\\u0000\"";
+            },
+            {
+                // U+001F (unit separator) is the last control character.
+                name = "Control character Unit Separator (U+001F)";
+                value = #string("\u{1f}");
+                expectedText = "\"\\u001f\"";
+            },
+
+            // --- Edge Cases and Combinations ---
+            {
+                name = "Empty string";
+                value = #string("");
+                expectedText = "\"\"";
+            },
+            {
+                name = "String containing only a quote";
+                value = #string("\"");
+                expectedText = "\"\\\"\"";
+            },
+            {
+                name = "String containing only a backslash";
+                value = #string("\\");
+                expectedText = "\"\\\\\"";
+            },
+            {
+                name = "The exact problem case: a string that is a JSON object";
+                value = #string("{\"key\":\"value\"}");
+                expectedText = "\"{\\\"key\\\":\\\"value\\\"}\"";
+            },
+            {
+                name = "A mix of all special characters";
+                value = #string("key:\"val\"\n\t\\path/\u{1}end");
+                expectedText = "\"key:\\\"val\\\"\\n\\t\\\\path/\\u0001end\"";
+            }
+        ];
+
+        for (testCase in testCases.vals()) {
+            let result = Json.stringify(testCase.value, null);
+
+            if (result != testCase.expectedText) {
+                Debug.trap(
+                    "stringify test case '" # testCase.name # "' failed\nInput:    "
+                    # debug_show (testCase.value)
+                    # "\nExpected: " # testCase.expectedText
+                    # "\nActual:   " # result
+                );
+            };
+        };
+    },
+);
